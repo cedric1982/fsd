@@ -8,25 +8,25 @@
 
 #ifdef WIN32
 	#define STRCASECMP(a,b)	_stricmp(a,b)
-	#define WRITESOCK(a,b,c) send(a,b,c,0) 
-	#define READSOCK(a,b,c) recv(a,b,c,0) 
+	#define WRITESOCK(a,b,c) send(a,b,c,0)
+	#define READSOCK(a,b,c) recv(a,b,c,0)
 	#define socklen_t	int
-	#define CLOSESOCKET(a) closesocket(a) 
+	#define CLOSESOCKET(a) closesocket(a)
 #else
 	#define STRCASECMP(a,b)	strcasecmp(a,b)
-	#define WRITESOCK(a,b,c) write(a,b,c) 
-	#define READSOCK(a,b,c) read(a,b,c) 
-	#define CLOSESOCKET(a) close(a) 
+	#define WRITESOCK(a,b,c) write(a,b,c)
+	#define READSOCK(a,b,c) read(a,b,c)
+	#define CLOSESOCKET(a) close(a)
 #endif
 
-#define PRODUCT "FSFDT Windows FSD Beta from FSD V3.000 draft 9"
+#define PRODUCT "WindSackAir FSD Server"
 #define VERSION "V3.000 d9"
 #define NEEDREVISION 9
 
 /*
     WARNING!!!: The USERTIMEOUT (idle time of a SOCKET before it's dropped)
-                should not be higher than the SERVERTIMEOUT (idle time of a
-                server)
+		    should not be higher than the SERVERTIMEOUT (idle time of a
+		    server)
 */
 #define USERTIMEOUT 500
 #define SERVERTIMEOUT 800
@@ -45,9 +45,9 @@
 #define CALLSIGNBYTES 12
 #define MAXLINELENGTH 512
 #define MAXMETARDOWNLOADTIME 900
-#define CERTFILECHECK 120
+#define CERTFILECHECK 30
 
-#define WHAZZUPCHECK 30
+#define WHAZZUPCHECK 5
 #define CONNECTDELAY 20
 
 #define LEV_SUSPENDED           0
@@ -64,5 +64,6 @@
 #define LEV_SUPERVISOR          11
 #define LEV_ADMINISTRATOR       12
 #define LEV_MAX                 12
+#define M_PI                    3.1415927
 
 #endif

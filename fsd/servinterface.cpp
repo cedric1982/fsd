@@ -187,7 +187,7 @@ int servinterface::sendmulticast(client *source, char *dest, char *s,
    int cmd, int multiok, absuser *ex)
 {
    client *destination=NULL;
-   char data[1000], servdest[100];
+   char data[100000], servdest[1000];
    char *sourcestr=(char *)(source?source->callsign:"server");
    if (source&&!STRCASECMP(dest, "server"))
    {
@@ -379,6 +379,7 @@ void servinterface::sendpacket(absuser *exclude, absuser *direction, int cmdnum,
       /* This is a broadcast packet.
          Note: '*P' and '*A' are broadcast destinations too! */
       case '*' :
+            if (!strcmp(to, "*S"))to = "*A";
          /* Reassemble the packet to indicate a broadcast */
          if (!bi) assemble(buf, cmdnum, to, from, 1, pc, hc, data);
 #define SERVOK(x) ((x!=exclude)&&(silentok[cmdnum]||((x)->thisserver==NULL||\

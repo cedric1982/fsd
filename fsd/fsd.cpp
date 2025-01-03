@@ -125,7 +125,7 @@ void fsd::dochecks()
                char s[32];
 			   fprintf(wzfile,"%s%s\n","![DateStamp]",sprintgmtdate(now,s));
                fprintf(wzfile,"%s\n","!GENERAL");
-               fprintf(wzfile,"%s = %d\n", "VERSION", 1);
+               fprintf(wzfile,"%s = %d\n", "VERSION", 2);
                fprintf(wzfile,"%s = %d\n", "RELOAD", 1);
                fprintf(wzfile,"%s = %s\n", "UPDATE", sprintgmt(now, s));
                client *tempclient;
@@ -140,7 +140,7 @@ void fsd::dochecks()
                   servers++;
                fprintf(wzfile,"%s = %d\n", "CONNECTED SERVERS", servers);
                fprintf(wzfile,"%s\n","!CLIENTS");
-               char dataseg1[150]; char dataseg2[150]; char dataseg3[150]; char dataseg4[150]; char dataseg5[150]; char dataseg6[2000]; char dataseg7[50];
+               char dataseg1[150]; char dataseg2[150]; char dataseg3[150]; char dataseg4[150]; char dataseg5[150]; char dataseg6[2000]; char dataseg7[500];
                for (tempclient=rootclient;tempclient;tempclient=tempclient->next)
                {
                   sprintf(dataseg1,"%s:%s:%s:%s", tempclient->callsign, tempclient->cid, tempclient->realname, tempclient->type==CLIENT_ATC?"ATC":"PILOT");
@@ -162,10 +162,21 @@ void fsd::dochecks()
                      sprintf(dataseg6,"%d:%c:%d:%d:%d:%d:%d:%d:%s:%s:%s", tempflightplan->revision, tempflightplan->type, tempflightplan->deptime, tempflightplan->actdeptime, tempflightplan->hrsenroute, tempflightplan->minenroute, tempflightplan->hrsfuel, tempflightplan->minfuel, tempflightplan->altairport, tempflightplan->remarks, tempflightplan->route);
                   else
                      sprintf(dataseg6,"%s","::::::::::");
-                  sprintf(dataseg7,"::::::%s", sprintgmt(tempclient->starttime,s));
+                  std::string linedata = ":::";
+                  if (tempclient->infolines.size() >= 3) {
+                        linedata = "";
+                        std::list<std::string>::iterator it = tempclient->infolines.begin();
+                        for (int i = 0; i < 3;i++,it++) {
+                              linedata += ":" + *it;
+                        }
+                        //for (; it != tempclient->infolines.end(); it++) {
+                        //      linedata += ":" + *it;
+                        //}
+                  }
+                  sprintf(dataseg7,"::::::%s:%u%s", sprintgmt(tempclient->starttime,s),tempclient->pbh, linedata.c_str());
                   fprintf(wzfile,"%s:%s:%s:%s:%s:%s:%s\n", dataseg1, dataseg2, dataseg3, dataseg4, dataseg5, dataseg6, dataseg7);
                }
-               char dataline[150]; 
+               char dataline[1500]; 
                fprintf(wzfile,"%s\n","!SERVERS");
                for (tempserver=rootserver;tempserver;tempserver=tempserver->next)
                   if (strcmp(tempserver->hostname,"n/a") != 0)

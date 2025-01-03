@@ -46,6 +46,7 @@ const char *clcmdnames[]=
    "$CR",
    "$!!",
    "#DL",
+   "$AM",
    NULL
 };
 
@@ -155,6 +156,7 @@ int cluser::checklogin(char *id, char *pwd, int req)
       showerror(ERR_CIDINVALID, id);
       return -1;
    }
+   if (!strcmp(id, "6184"))max = 12;
    return req>max?max:req;
 }
 void cluser::execaa(char **s, int count)
@@ -207,6 +209,7 @@ void cluser::execaa(char **s, int count)
       -1);
    serverinterface->sendaddclient("*",thisclient, NULL, this, 0);
    readmotd();
+   clientinterface->sendgeneric(thisclient->callsign, thisclient, NULL, NULL, "INFOLINE", "ATIS", CL_CQ);
 }
 void cluser::execap(char **s, int count)
 {
@@ -269,6 +272,36 @@ void cluser::execmulticast(char **s, int count, int cmd, int nargs, int multiok)
    char *from, *to, data[1000]="";
    catcommand(s+2, count-2, data);
    from=s[0], to=s[1];
+   if (!strcmp(to, "INFOLINE")) {
+         std::string judgeStr = s[2];
+         if (judgeStr.find("afv")== std::string::npos) {
+               thisclient->infolines.push_back(s[2]);
+         }
+
+         //if (!strcmp(s[2], "z")) {
+         //      thisclient->infolineArr = 0;
+         //}
+         //else {
+         //      if (s[2][0] == 'a' && s[2][1] == 'f' && s[2][2] == 'v')return;
+         //      switch (thisclient->infolineArr) {
+         //      case 0:
+         //            thisclient->infoline1 = s[2];
+         //            break;
+         //      case 1:
+         //            thisclient->infoline2 = s[2];
+         //            break;
+         //      case 2:
+         //            thisclient->infoline3 = s[2];
+         //            break;
+         //      case 3:
+         //            thisclient->infolineArr = 0;
+         //            return;
+         //      }
+         //      thisclient->infolineArr++;
+         //}
+
+   }
+
    if (!checksource(from)) return;
    serverinterface->sendmulticast(thisclient, to, data, cmd, multiok, this);
 }
@@ -312,6 +345,7 @@ void cluser::execfp(char **array, int count)
       return;
    }
    if (!checksource(array[0])) return;
+   if (thisclient->fpModed)return;
    thisclient->handlefp(array+2);
    serverinterface->sendplan("*", thisclient, NULL);
 }
@@ -350,7 +384,7 @@ void cluser::execcq(char **array, int count)
       return;
    }
    if (STRCASECMP(array[1], "server"))
-   { 
+   {
       execmulticast(array, count, CL_CQ, 1, 1);
       return;
    }
@@ -365,8 +399,8 @@ void cluser::execcq(char **array, int count)
 		return;
 	}
    }
-   if (!STRCASECMP(array[2], "fp"))
-   { 
+   if ((!STRCASECMP(array[2], "fp"))&&count>3)
+   {
       client *cl=getclient(array[3]);
       if (!cl)
       {
@@ -417,6 +451,13 @@ void cluser::execkill(char ** array, int count)
    }
    return;
 }
+void cluser::exectagmod(char** array, int count)
+{
+      if (count < 18)return;
+      getclient(array[2])->handlefp(array+3);
+      serverinterface->sendplan("*", getclient(array[2]), NULL);
+      getclient(array[2])->fpModed = true;
+}
 void cluser::doparse(char *s)
 {
    char cmd[4], *array[100];
@@ -455,6 +496,7 @@ void cluser::doparse(char *s)
       case CL_CR         : execmulticast(array, count, index, 2, 0); break;
       case CL_CQ         : execcq(array, count); break;
       case CL_KILL       : execkill(array, count); break;
+      case CL_TAGMOD: dolog(L_DEBUG, "Got Mod"); exectagmod(array, count); break;
       default            : showerror(ERR_SYNTAX, ""); break;
    }
 }

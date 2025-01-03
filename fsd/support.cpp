@@ -20,6 +20,7 @@
 #include "support.h"
 #include "global.h"
 #include "server.h"
+#pragma comment(lib, "ws2_32.lib")
 
 int logp=0;
 time_t timer=100000;
@@ -50,7 +51,7 @@ void addfile(char *name, char *string,...)
 void dolog(int level, const char *string, ...)
 {
    char buf[1000], buf2[1200];
-   long secs=time(NULL);
+   const time_t secs=time(NULL);
    struct tm *loctime;
    static int firsttime=1;
    FILE *logfile=fopen(LOGFILE,"a");
