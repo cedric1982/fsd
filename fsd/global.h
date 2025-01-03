@@ -19,7 +19,7 @@
 	#define CLOSESOCKET(a) close(a)
 #endif
 
-#define PRODUCT "Skydream FSD Server"
+#define PRODUCT "WindSackAir FSD Server"
 #define VERSION "V3.000 d9"
 #define NEEDREVISION 9
 

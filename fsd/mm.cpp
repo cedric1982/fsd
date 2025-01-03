@@ -59,7 +59,7 @@ mm::mm()
 
    if (source==SOURCE_DOWNLOAD)
    {
-      if (!metarhost) metarhost=strdup("weather.noaa.gov");
+      if (!metarhost) metarhost=strdup("tgftp.nws.noaa.gov");
       if (!metardir) metardir=strdup("data/observations/metar/cycles/");
    }
 
@@ -136,7 +136,7 @@ void mm::buildlist()
       if (count<3) continue;
       if (strncmp(line,"     ",5)==0) continue;
       char *statname=(strlen(array[0])==4)?array[0]:strlen(array[1])==4?
-         array[1]:(char*)NULL; 
+         array[1]:(char*)NULL;
       if (!statname) continue;
       if (nstations==max)
          stationlist=(station*) realloc(stationlist, sizeof(station)*
@@ -261,7 +261,6 @@ void mm::startdownload()
 }
 void mm::dodownload()
 {
-	
    if ((mtime()-prevdownload)>MAXMETARDOWNLOADTIME)
    {
       dolog(L_WARNING, "METAR download interrupted due to timeout");
@@ -271,7 +270,7 @@ void mm::dodownload()
    }
    if (FD_ISSET(sock, rmask))
    {
-	   
+
 	   char buf[4096];
 	   int bytes=READSOCK(sock, buf, 4096);
    /*char* sockrecvbuffer;
@@ -353,7 +352,7 @@ void mm::dodownload()
 		   }
 	   }
    }
-   
+
    if (datareadsock==-1)
    {
 
@@ -364,10 +363,10 @@ void mm::dodownload()
    if (!FD_ISSET(datareadsock, rmask)) return;
    char buf[1024];
    int bytes=READSOCK(datareadsock, buf, 1024);
-   
+
    if (bytes<=0)
    {
-	   
+
       stopdownload();
       newfileready=1;
    } else

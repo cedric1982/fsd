@@ -277,7 +277,7 @@ void cluser::execmulticast(char **s, int count, int cmd, int nargs, int multiok)
          if (judgeStr.find("afv")== std::string::npos) {
                thisclient->infolines.push_back(s[2]);
          }
-         
+
          //if (!strcmp(s[2], "z")) {
          //      thisclient->infolineArr = 0;
          //}
@@ -299,9 +299,9 @@ void cluser::execmulticast(char **s, int count, int cmd, int nargs, int multiok)
          //      }
          //      thisclient->infolineArr++;
          //}
-         
+
    }
-   
+
    if (!checksource(from)) return;
    serverinterface->sendmulticast(thisclient, to, data, cmd, multiok, this);
 }
@@ -384,7 +384,7 @@ void cluser::execcq(char **array, int count)
       return;
    }
    if (STRCASECMP(array[1], "server"))
-   { 
+   {
       execmulticast(array, count, CL_CQ, 1, 1);
       return;
    }
@@ -400,7 +400,7 @@ void cluser::execcq(char **array, int count)
 	}
    }
    if ((!STRCASECMP(array[2], "fp"))&&count>3)
-   { 
+   {
       client *cl=getclient(array[3]);
       if (!cl)
       {

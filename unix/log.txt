@@ -1,0 +1,50 @@
+03-01-125 20:36:59 : Booting server
+03-01-125 20:36:59 FSD: Reading certificates from 'cert.txt'
+03-01-125 20:36:59 FSD: Booting port 6809 (client interface)
+03-01-125 20:36:59 FSD: Booting port 3011 (server interface)
+03-01-125 20:36:59 FSD: Booting port 3010 (system management interface)
+03-01-125 20:36:59 FSD: No 'allowfrom' found, allowing everybody on the server port
+03-01-125 20:36:59 FSD: We are up
+03-01-125 20:37:00 FSD: ** METAR: Could not lookup METAR host name weather.noaa.gov.
+03-01-125 20:38:32 : Booting server
+03-01-125 20:38:32 FSD: Reading certificates from 'cert.txt'
+03-01-125 20:38:32 FSD: Booting port 6809 (client interface)
+03-01-125 20:38:32 FSD: Booting port 3011 (server interface)
+03-01-125 20:38:32 FSD: Booting port 3010 (system management interface)
+03-01-125 20:38:32 FSD: No 'allowfrom' found, allowing everybody on the server port
+03-01-125 20:38:32 FSD: We are up
+03-01-125 20:45:10 : Booting server
+03-01-125 20:45:10 FSD: Reading certificates from 'cert.txt'
+03-01-125 20:45:10 FSD: Booting port 6809 (client interface)
+03-01-125 20:45:10 FSD: Booting port 3011 (server interface)
+03-01-125 20:45:10 FSD: Booting port 3010 (system management interface)
+03-01-125 20:45:10 FSD: No 'allowfrom' found, allowing everybody on the server port
+03-01-125 20:45:10 FSD: We are up
+03-01-125 21:02:17 : Booting server
+03-01-125 21:02:17 FSD: Reading certificates from 'cert.txt'
+03-01-125 21:02:17 FSD: Booting port 6809 (client interface)
+03-01-125 21:02:17 FSD: Booting port 3011 (server interface)
+03-01-125 21:02:17 FSD: Booting port 3010 (system management interface)
+03-01-125 21:02:17 FSD: No 'allowfrom' found, allowing everybody on the server port
+03-01-125 21:02:17 FSD: We are up
+03-01-125 21:12:47 : Booting server
+03-01-125 21:12:47 FSD: Reading certificates from 'cert.txt'
+03-01-125 21:12:47 FSD: Booting port 6809 (client interface)
+03-01-125 21:12:47 FSD: Booting port 3011 (server interface)
+03-01-125 21:12:47 FSD: Booting port 3010 (system management interface)
+03-01-125 21:12:47 FSD: No 'allowfrom' found, allowing everybody on the server port
+03-01-125 21:12:47 FSD: We are up
+03-01-125 21:15:17 : Booting server
+03-01-125 21:15:17 FSD: Reading certificates from 'cert.txt'
+03-01-125 21:15:17 FSD: Booting port 6809 (client interface)
+03-01-125 21:15:17 FSD: Booting port 3011 (server interface)
+03-01-125 21:15:17 FSD: Booting port 3010 (system management interface)
+03-01-125 21:15:17 FSD: No 'allowfrom' found, allowing everybody on the server port
+03-01-125 21:15:17 FSD: We are up
+03-01-125 21:16:20 : Booting server
+03-01-125 21:16:20 FSD: Reading certificates from 'cert.txt'
+03-01-125 21:16:20 FSD: Booting port 6809 (client interface)
+03-01-125 21:16:20 FSD: Booting port 3011 (server interface)
+03-01-125 21:16:20 FSD: Booting port 3010 (system management interface)
+03-01-125 21:16:20 FSD: No 'allowfrom' found, allowing everybody on the server port
+03-01-125 21:16:20 FSD: We are up
