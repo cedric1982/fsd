@@ -26,6 +26,11 @@ client::client(char *i, server *where, char *cs, int t, int reqrating,
    plan=NULL, positionok=0, altitude=0, simtype=st;
    realname=strdup(real), starttime=alive=mtime();
    frequency=0; transponder=0; groundspeed=0; lat=0; lon=0;
+   prev_lat = 0;
+   prev_lon = 0;
+   heading = -1;
+
+	
 }
 client::~client()
 {
@@ -40,6 +45,30 @@ client::~client()
    if (sector) free(sector);
    if (identflag) free(identflag);
 }
+
+void client::updateHeading() {
+   if (prev_lat == 0 && prev_lon == 0) {
+	prev_lat = lat;
+	prev_lon = lon;
+	heading = -1;
+	return;
+   }
+	double lat1 = prev_lat * M_PI / 180.0;
+	double lon1 = prev_lon * M_PI / 180.0;
+	double lat2 = lat * M_PI / 180.0;
+	double lon2 = lon * M_PI / 180.0;
+	double dLon = lon2 - lon1;
+
+	double y = sin(dLon) * cos(lat2);
+	double x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon);
+	double theta = atan2(y, x);
+
+	heading = fmod((theta * 180.0 / M_PI) + 360.0, 360.0);
+
+	prev_lat = lat;
+	prev_lon = lon;
+}
+
 void client::handlefp(char **array)
 {
    int revision=plan?plan->revision+1:0;
@@ -62,7 +91,7 @@ void client::updatepilot(char **array)
    sscanf(array[4],"%lf",&lat);
    sscanf(array[5],"%lf",&lon);
 if (lat>90.0||lat<-90.0||lon>180.0||lon<-180.0) dolog(L_DEBUG, "POSERR: s=(%s,%s) got(%f,%f)", array[4], array[5], lat, lon);
-
+   updateHeading();
    altitude=atoi(array[6]);
 //if (altitude > 100000 || altitude < 0)
 //	altitude=0;
@@ -88,6 +117,7 @@ void client::updateatc(char **array)
    visualrange=atoi(array[2]);
    sscanf(array[4],"%lf",&lat);
    sscanf(array[5],"%lf",&lon);
+   updateHeading();
    altitude=atoi(array[6]);
    setalive();
    positionok=1;
