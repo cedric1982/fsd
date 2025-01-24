@@ -150,9 +150,9 @@ void fsd::dochecks()
                      sprintf(dataseg2,"%s","");
                   tempflightplan=tempclient->plan;
                   if (tempclient->lat!=0 && tempclient->altitude < 100000 && tempclient->lon != 0)
-                     sprintf(dataseg3,"%f:%f:%d:%d", tempclient->lat, tempclient->lon, tempclient->altitude, tempclient->groundspeed);
+                     sprintf(dataseg3,"%f:%f:%d:%d:%d", tempclient->lat, tempclient->lon, tempclient->altitude, tempclient->groundspeed, (int)tempclient->heading);
                   else
-                     sprintf(dataseg3,"%s",":::");
+                     sprintf(dataseg3,"%s","::::");
                   if (tempflightplan)
                      sprintf(dataseg4,"%s:%d:%s:%s:%s", tempflightplan->aircraft, tempflightplan->tascruise, tempflightplan->depairport, tempflightplan->alt, tempflightplan->destairport);
                   else
