@@ -57,6 +57,10 @@ class client
    void setalive();
    double distance(client *);
    int getrange();
+   double prev_lat;
+   double prev_lon;
+   double heading;
+   void updateHeading();
    std::list<std::string> infolines;
    bool fpModed = false;
 };
