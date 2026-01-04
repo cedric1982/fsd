@@ -1057,20 +1057,22 @@ void sysuser::execdump(char **array, int count)
    for (temp=serverinterface->rootuser;temp;temp=temp->next)
       if (temp->fd==num)
    {
-      int fd=open(array[1],O_WRONLY|O_CREAT|O_TRUNC, 0666);
-      if (fd==-1)
+      int dumpfd=open(array[1],O_WRONLY|O_CREAT|O_TRUNC, 0666);
+		if (dumpfd==-1)
       {
          uprintf("%s: %s\r\n", array[1], strerror(errno));
          return;
       }
-      write(fd, temp->outbuf, strlen(temp->outbuf));
-      close(fd);
+      write(dumpfd, temp->outbuf, strlen(temp->outbuf));
+		close(dumpfd);
       uprintf("Done\r\n");
       return;
    }
    uprintf("Can't find fd\r\n");
 }
-void sysuser::execrefmetar(char **array, int count)
+void sysuser::execrefmetar([[maybe_unused]] char **array,
+                           [[maybe_unused]] int count)
+
 {
    if (metarmanager->source==SOURCE_NETWORK)
    {
