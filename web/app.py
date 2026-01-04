@@ -26,7 +26,7 @@ def get_fsd_process():
 
 
 def parse_whazzup_clients():
-    """Parst die !CLIENTS-Sektion aus whazzup.txt."""
+    """Parst die !CLIENTS-Sektion aus whazzup.txt"""
     clients = []
     if not os.path.exists(WHAZZUP_PATH):
         return clients
@@ -40,31 +40,37 @@ def parse_whazzup_clients():
         if not line:
             continue
 
-        if line.startswith('!CLIENTS:'):
+        # Wenn !CLIENTS gefunden, start parsing
+        if line.startswith("!CLIENTS:"):
             in_clients = True
             continue
-        if line.startswith('!SERVERS:') or line.startswith('!GENERAL:') or line.startswith('!VERSION:'):
-            in_clients = False
-            continue
 
-        if in_clients and not line.startswith('!'):
-            parts = line.split(':')
-            if len(parts) > 7:
-                callsign = parts[0] if len(parts) > 0 else "?"
-                name = parts[2] if len(parts) > 2 else "?"
-                client_type = parts[4] if len(parts) > 4 else "?"
-                lat = parts[5] if len(parts) > 5 else "?"
-                lon = parts[6] if len(parts) > 6 else "?"
-                alt = parts[7] if len(parts) > 7 else "?"
+        # Ende der Clients-Sektion, wenn neue Sektion startet
+        if in_clients and line.startswith("!"):
+            break
 
-                clients.append({
-                    "callsign": callsign,
-                    "type": client_type,
-                    "lat": lat,
-                    "lon": lon,
-                    "alt": alt
-                })
+        # Wenn innerhalb der Clients-Sektion
+        if in_clients:
+            parts = line.split(":")
+            if len(parts) < 8:
+                continue  # unvollständige Zeile
+
+            callsign = parts[0]
+            client_type = parts[4] if len(parts) > 4 else "?"
+            lat = parts[5] if len(parts) > 5 else "?"
+            lon = parts[6] if len(parts) > 6 else "?"
+            alt = parts[7] if len(parts) > 7 else "?"
+
+            clients.append({
+                "callsign": callsign,
+                "type": client_type,
+                "lat": lat,
+                "lon": lon,
+                "alt": alt
+            })
+
     return clients
+
 
 
 @app.route("/")
