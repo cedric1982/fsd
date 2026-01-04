@@ -1,0 +1,36 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 40px;
+    background-color: #1e1e1e;
+    color: #fff;
+    text-align: center;
+}
+#status-box {
+    display: inline-block;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    background: #333;
+}
+button {
+    padding: 10px 20px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    background-color: #2a9d8f;
+    color: white;
+    cursor: pointer;
+}
+table {
+    width: 80%;
+    margin: 0 auto;
+    border-collapse: collapse;
+    background: #2b2b2b;
+}
+th, td {
+    padding: 8px;
+    border-bottom: 1px solid #444;
+}
+th {
+    background: #444;
+}
