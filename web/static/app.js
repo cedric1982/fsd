@@ -25,6 +25,27 @@ async function loadClients() {
     });
 }
 
+
+async function loadLogins() {
+    const res = await fetch('/api/logins');
+    const data = await res.json();
+    const tbody = document.querySelector('#logins tbody');
+    tbody.innerHTML = '';
+    data.forEach(l => {
+        const row = `<tr>
+            <td>${l.timestamp}</td>
+            <td>${l.callsign}</td>
+            <td>${l.cid}</td>
+            <td>${l.status}</td>
+            <td>${l.message}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+    });
+}
+
+
+
+
 document.getElementById('restart').addEventListener('click', async () => {
     const res = await fetch('/api/restart', { method: 'POST' });
     const msg = await res.json();
