@@ -56,7 +56,9 @@ document.getElementById('restart').addEventListener('click', async () => {
 setInterval(() => {
     loadStatus();
     loadClients();
+    loadLogins();
 }, 3000);
 
 loadStatus();
 loadClients();
+loadLogins();
