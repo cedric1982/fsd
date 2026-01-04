@@ -5,6 +5,7 @@
 #endif
 #include <ctime>
 #include <cstring>
+#include <cstdarg>
 
 #include "interface.h"
 #include "clinterface.h"
@@ -15,6 +16,35 @@
 #include "client.h"
 #include "cluser.h"
 #include "user.h"
+
+
+static void buf_setf(char* buf, size_t buflen, const char* fmt, ...)
+{
+    if (!buf || buflen == 0) return;
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf, buflen, fmt, ap);
+    va_end(ap);
+    buf[buflen - 1] = '\0';
+}
+
+static void buf_appendf(char* buf, size_t buflen, const char* fmt, ...)
+{
+    if (!buf || buflen == 0) return;
+    size_t used = strnlen(buf, buflen);
+    if (used >= buflen - 1) return;
+
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(buf + used, buflen - used, fmt, ap);
+    va_end(ap);
+    buf[buflen - 1] = '\0';
+}
+
+
+
+
+
 
 /* The client interface class */
 
@@ -43,8 +73,9 @@ void clinterface::newuser(int fd, char *peer, int portnum, int g)
 void clinterface::sendaa(client *who, absuser *ex)
 {
    char data[1000];
-   sprintf(data,"%s:SERVER:%s:%s::%d", who->callsign, who->realname,
-      who->cid,who->rating,who->protocol);
+		buf_setf(data, sizeof(data), "%s:SERVER:%s:%s::%d",
+         who->callsign, who->realname, who->cid, who->rating, who->protocol);
+
    sendpacket(NULL, NULL, ex, CLIENT_ALL, -1, CL_ADDATC, data);
 }
 void clinterface::sendap(client *who, absuser *ex)
@@ -82,7 +113,7 @@ void clinterface::sendweather(client *who, wprofile *p)
    strcat(buf, part);
    sendpacket(who, NULL, NULL, CLIENT_ALL, -1, CL_TEMPDATA, buf);
 
-   sprintf(buf,"%s:%s", "server", who->callsign);
+   buf_setf(buf, sizeof(buf),"%s:%s", "server", who->callsign);
    for (x=0;x<4;x++)
    {
       windlayer *l=&p->winds[x];
@@ -92,7 +123,7 @@ void clinterface::sendweather(client *who, wprofile *p)
    }
    sendpacket(who, NULL, NULL, CLIENT_ALL, -1, CL_WINDDATA, buf);
 
-   sprintf(buf,"%s:%s", "server", who->callsign);
+   buf_setf(buf, sizeof(buf),"%s:%s", "server", who->callsign);
    for (x=0;x<3;x++)
    {
       cloudlayer *c=(x==2?p->tstorm:&p->clouds[x]);
@@ -107,7 +138,7 @@ void clinterface::sendweather(client *who, wprofile *p)
 void clinterface::sendmetar(client *who, char *data)
 {
    char buf[1000];
-   sprintf(buf,"server:%s:METAR:%s", who->callsign, data);
+   buf_setf(buf, sizeof(buf),"server:%s:METAR:%s", who->callsign, data);
    sendpacket(who, NULL, NULL, CLIENT_ALL, -1, CL_REPACARS, buf);
 }
 void clinterface::sendnowx(client *who, char *station)
@@ -135,7 +166,7 @@ void clinterface::sendgeneric(char *to, client *dest, absuser *ex,
 {
    char buf[1000];
    int range=-1;
-   sprintf(buf,"%s:%s:%s",from,to,s);
+   buf_setf(buf, sizeof(buf),"%s:%s:%s",from,to,s);
    if (to[0]=='@'&&source)
       range=source->getrange();     
    sendpacket(dest, source, ex, getbroad(to), range, cmd, buf);
@@ -163,7 +194,7 @@ void clinterface::sendplan(client *dest, client *who, int range)
 {
    char buf[1000], *cs=(char *)(dest?dest->callsign:"*A");
    flightplan *plan=who->plan;
-   sprintf(buf,"%s:%s:%c:%s:%d:%s:%d:%d:%s:%s:%d:%d:%d:%d:%s:%s:%s",
+   buf_setf(buf, sizeof(buf),"%s:%s:%c:%s:%d:%s:%d:%d:%s:%s:%d:%d:%d:%d:%s:%s:%s",
       who->callsign, cs, plan->type, plan->aircraft,
       plan->tascruise, plan->depairport, plan->deptime, plan->actdeptime,
       plan->alt, plan->destairport, plan->hrsenroute, plan->minenroute,
@@ -181,7 +212,7 @@ void clinterface::handlekill(client *who, char *reason)
       if (ctemp->thisclient==who)
       {
          char buf[1000];
-         sprintf(buf,"SERVER:%s:%s", who->callsign, reason);
+         buf_setf(buf, sizeof(buf),"SERVER:%s:%s", who->callsign, reason);
          sendpacket(who, NULL, NULL, CLIENT_ALL, -1, CL_KILL, buf);
          temp->kill(KILL_KILL);
       }
@@ -193,7 +224,7 @@ void clinterface::sendwinddelta()
    char buf[100];
    int speed=mrand()%11-5;
    int direction=mrand()%21-10;
-   sprintf(buf,"SERVER:*:%d:%d", speed, direction);
+   buf_setf(buf, sizeof(buf),"SERVER:*:%d:%d", speed, direction);
    sendpacket(NULL, NULL, NULL, CLIENT_ALL, -1, CL_WDELTA, buf);
 }
 
