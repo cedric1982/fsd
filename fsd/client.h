@@ -42,6 +42,10 @@ class client
    time_t alive;
    char *cid, *callsign, *protocol, *realname, *sector, *identflag;
    double lat,lon;
+   double last_lat = 0.0;
+   double last_lon = 0.0;
+   bool   has_last_pos = false;
+   int    computed_hdg = -1;
    int transponder, altitude, groundspeed, frequency, facilitytype;
    int positionok, visualrange, simtype;
    server *location;
