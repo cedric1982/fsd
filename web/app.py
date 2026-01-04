@@ -26,34 +26,39 @@ def get_fsd_process():
 
 
 def parse_whazzup_clients():
-    """Parst die !CLIENTS-Sektion aus whazzup.txt"""
+    """Parst die !CLIENTS-Sektion aus whazzup.txt und gibt Debug-Infos aus"""
     clients = []
     if not os.path.exists(WHAZZUP_PATH):
+        print("❌ whazzup.txt wurde nicht gefunden unter:", WHAZZUP_PATH)
         return clients
 
     with open(WHAZZUP_PATH, 'r', encoding='utf-8', errors='ignore') as f:
         lines = f.readlines()
 
     in_clients = False
+    print("📡 Starte Parsing von whazzup.txt...")
     for line in lines:
         line = line.strip()
         if not line:
             continue
 
-        # Wenn !CLIENTS gefunden, start parsing
+        # Starte Clients-Sektion
         if line.startswith("!CLIENTS:"):
             in_clients = True
+            print("➡️  !CLIENTS-Sektion erkannt")
             continue
 
-        # Ende der Clients-Sektion, wenn neue Sektion startet
+        # Beende Clients-Sektion bei neuer Kategorie
         if in_clients and line.startswith("!"):
+            print("⛔ Ende der Clients-Sektion erreicht.")
             break
 
         # Wenn innerhalb der Clients-Sektion
         if in_clients:
             parts = line.split(":")
             if len(parts) < 8:
-                continue  # unvollständige Zeile
+                print("⚠️  Überspringe unvollständige Zeile:", line)
+                continue
 
             callsign = parts[0]
             client_type = parts[4] if len(parts) > 4 else "?"
@@ -68,7 +73,9 @@ def parse_whazzup_clients():
                 "lon": lon,
                 "alt": alt
             })
+            print(f"✅ Client erkannt: {callsign}, Typ: {client_type}, Pos: ({lat}, {lon})")
 
+    print(f"🔍 Insgesamt {len(clients)} Clients gefunden.")
     return clients
 
 
