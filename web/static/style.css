@@ -34,3 +34,16 @@ th, td {
 th {
     background: #444;
 }
+#logins {
+    width: 80%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    background: #2b2b2b;
+}
+#logins th, #logins td {
+    padding: 8px;
+    border-bottom: 1px solid #444;
+}
+#logins th {
+    background: #444;
+}
