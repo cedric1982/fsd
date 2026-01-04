@@ -35,8 +35,8 @@ class absuser
    int nextline(char *, char *);
    void kill(int);
    int send(char *);
-   void uprintf(char *, ...);
-   void uslprintf(char *, int, ...);
+   void uprintf(const char *, ...);
+   void uslprintf(const char *, int, ...);
    void block();
    void unblock();
    void printprompt();
