@@ -127,12 +127,10 @@ void clinterface::sendweather(client *who, wprofile *p)
    for (x=0;x<3;x++)
    {
       cloudlayer *c=(x==2?p->tstorm:&p->clouds[x]);
-      sprintf(part,":%d:%d:%d:%d:%d", c->ceiling, c->floor, c->coverage,
-         c->icing, c->turbulence);
-      strcat(buf, part);
+      buf_appendf(buf, sizeof(buf), ":%d:%d:%d:%d:%d",
+            c->ceiling, c->floor, c->coverage, c->icing, c->turbulence);
    }
-   sprintf(part,":%.2f", p->visibility);
-   strcat(buf, part);
+   buf_appendf(buf, sizeof(buf), ":%.2f", p->visibility);
    sendpacket(who, NULL, NULL, CLIENT_ALL, -1, CL_CLOUDDATA, buf);
 }
 void clinterface::sendmetar(client *who, char *data)
