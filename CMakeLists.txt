@@ -47,5 +47,34 @@ add_executable(fsd
         fsd/user.h
         fsd/wprofile.cpp
         fsd/wprofile.h)
-set_property(TARGET fsd PROPERTY CXX_STANDARD 14)
+set_property(TARGET fsd PROPERTY CXX_STANDARD 20)
 set_property(TARGET fsd PROPERTY CXX_STANDARD_REQUIRED ON)
+
+option(FSD_ENABLE_WARNINGS "Enable extra compiler warnings" ON)
+option(FSD_ENABLE_WERROR   "Treat warnings as errors" OFF)
+option(FSD_ENABLE_SANITIZERS "Enable ASan/UBSan (Debug/RelWithDebInfo recommended)" OFF)
+
+if(FSD_ENABLE_WARNINGS)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(fsd PRIVATE
+      -Wall -Wextra -Wpedantic
+      -Wshadow -Wconversion -Wsign-conversion
+      -Wformat=2 -Wundef
+      -Wnon-virtual-dtor
+    )
+  endif()
+endif()
+
+if(FSD_ENABLE_WERROR)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(fsd PRIVATE -Werror)
+  endif()
+endif()
+
+if(FSD_ENABLE_SANITIZERS)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(fsd PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(fsd PRIVATE -fsanitize=address,undefined)
+  endif()
+endif()
+
