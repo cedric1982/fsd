@@ -6,6 +6,48 @@
 #include <cstring>
 #include <cmath>
 
+
+static int compute_bearing_deg(double lat1, double lon1, double lat2, double lon2)
+{
+    // Great-circle initial bearing. Result 0..359.
+    const double deg2rad = M_PI / 180.0;
+    const double rad2deg = 180.0 / M_PI;
+
+    const double phi1 = lat1 * deg2rad;
+    const double phi2 = lat2 * deg2rad;
+    const double dlam = (lon2 - lon1) * deg2rad;
+
+    const double y = std::sin(dlam) * std::cos(phi2);
+    const double x = std::cos(phi1) * std::sin(phi2) -
+                     std::sin(phi1) * std::cos(phi2) * std::cos(dlam);
+
+    if (x == 0.0 && y == 0.0) return -1;
+
+    double brng = std::atan2(y, x) * rad2deg;       // -180..180
+    brng = std::fmod(brng + 360.0, 360.0);          // 0..360
+    int hdg = static_cast<int>(std::lround(brng)) % 360;
+    return hdg;
+}
+
+static double haversine_m(double lat1, double lon1, double lat2, double lon2)
+{
+    const double R = 6371000.0;
+    const double deg2rad = M_PI / 180.0;
+    const double p1 = lat1 * deg2rad;
+    const double p2 = lat2 * deg2rad;
+    const double dp = (lat2 - lat1) * deg2rad;
+    const double dl = (lon2 - lon1) * deg2rad;
+
+    const double a = std::sin(dp/2)*std::sin(dp/2) +
+                     std::cos(p1)*std::cos(p2) * std::sin(dl/2)*std::sin(dl/2);
+    const double c = 2 * std::atan2(std::sqrt(a), std::sqrt(1-a));
+    return R * c;
+}
+
+
+
+
+
 #include "client.h"
 #include "cluser.h"
 #include "fsd.h"
@@ -61,6 +103,21 @@ void client::updatepilot(char **array)
    identflag=strdup(array[0]);
    sscanf(array[4],"%lf",&lat);
    sscanf(array[5],"%lf",&lon);
+
+   if (has_last_pos) {
+      const double moved_m = haversine_m(last_lat, last_lon, lat, lon);
+
+      // Gate: ignore tiny movements (noise while stopped)
+      if (moved_m > 5.0) {
+         int hdg = compute_bearing_deg(last_lat, last_lon, lat, lon);
+         if (hdg >= 0) computed_hdg = hdg;
+      }
+   }
+
+   last_lat = lat;
+   last_lon = lon;
+   has_last_pos = true;
+
 if (lat>90.0||lat<-90.0||lon>180.0||lon<-180.0) dolog(L_DEBUG, "POSERR: s=(%s,%s) got(%f,%f)", array[4], array[5], lat, lon);
 
    altitude=atoi(array[6]);
