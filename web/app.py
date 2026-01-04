@@ -18,27 +18,43 @@ def parse_whazzup_clients():
     clients = []
     if not os.path.exists(WHAZZUP_PATH):
         return clients
+
     with open(WHAZZUP_PATH, 'r', encoding='utf-8', errors='ignore') as f:
-        content = f.read()
-    lines = content.splitlines()
+        lines = f.readlines()
+
     in_clients = False
     for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
         if line.startswith('!CLIENTS:'):
             in_clients = True
             continue
-        if line.startswith('!SERVERS:') or line.startswith('!GENERAL:'):
+        if line.startswith('!SERVERS:') or line.startswith('!GENERAL:') or line.startswith('!VERSION:'):
             in_clients = False
-        if in_clients and line.strip() and not line.startswith('!'):
+            continue
+
+        if in_clients and not line.startswith('!'):
             parts = line.split(':')
-            if len(parts) > 4:
-                clients.append({
-                    "callsign": parts[0],
-                    "type": parts[3],
-                    "lat": parts[5] if len(parts) > 5 else "?",
-                    "lon": parts[6] if len(parts) > 6 else "?",
-                    "alt": parts[7] if len(parts) > 7 else "?",
-                })
+            # Dynamisch prüfen, ob genug Daten da sind
+            callsign = parts[0] if len(parts) > 0 else "?"
+            name = parts[2] if len(parts) > 2 else "?"
+            client_type = parts[4] if len(parts) > 4 else "?"
+            lat = parts[5] if len(parts) > 5 else "?"
+            lon = parts[6] if len(parts) > 6 else "?"
+            alt = parts[7] if len(parts) > 7 else "?"
+
+            clients.append({
+                "callsign": callsign,
+                "type": client_type,
+                "lat": lat,
+                "lon": lon,
+                "alt": alt
+            })
+
     return clients
+
 
 @app.route("/")
 def index():
