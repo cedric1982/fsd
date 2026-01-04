@@ -1,20 +1,32 @@
 from flask import Flask, render_template, jsonify
-import psutil, subprocess, time, os, re
+import psutil
+import subprocess
+import time
+import os
 
 app = Flask(__name__)
 
-# Feste Pfade
+# Feste Pfade (bitte anpassen, falls du andere nutzt)
 FSD_PATH = "/fsd/unix/fsd"
 WHAZZUP_PATH = "/fsd/unix/whazzup.txt"
 CONF_PATH = "/fsd/unix/fsd.conf"
 
+
 def get_fsd_process():
+    """Prüft, ob der FSD-Prozess aktiv ist."""
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-        if 'fsd' in proc.info['name'] or (proc.info['cmdline'] and FSD_PATH in " ".join(proc.info['cmdline'])):
-            return proc
+        try:
+            if 'fsd' in proc.info['name'] or (
+                proc.info['cmdline'] and FSD_PATH in " ".join(proc.info['cmdline'])
+            ):
+                return proc
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
     return None
 
+
 def parse_whazzup_clients():
+    """Parst die !CLIENTS-Sektion aus whazzup.txt."""
     clients = []
     if not os.path.exists(WHAZZUP_PATH):
         return clients
@@ -37,28 +49,28 @@ def parse_whazzup_clients():
 
         if in_clients and not line.startswith('!'):
             parts = line.split(':')
-            # Dynamisch prüfen, ob genug Daten da sind
-            callsign = parts[0] if len(parts) > 0 else "?"
-            name = parts[2] if len(parts) > 2 else "?"
-            client_type = parts[4] if len(parts) > 4 else "?"
-            lat = parts[5] if len(parts) > 5 else "?"
-            lon = parts[6] if len(parts) > 6 else "?"
-            alt = parts[7] if len(parts) > 7 else "?"
+            if len(parts) > 7:
+                callsign = parts[0] if len(parts) > 0 else "?"
+                name = parts[2] if len(parts) > 2 else "?"
+                client_type = parts[4] if len(parts) > 4 else "?"
+                lat = parts[5] if len(parts) > 5 else "?"
+                lon = parts[6] if len(parts) > 6 else "?"
+                alt = parts[7] if len(parts) > 7 else "?"
 
-            clients.append({
-                "callsign": callsign,
-                "type": client_type,
-                "lat": lat,
-                "lon": lon,
-                "alt": alt
-            })
-
+                clients.append({
+                    "callsign": callsign,
+                    "type": client_type,
+                    "lat": lat,
+                    "lon": lon,
+                    "alt": alt
+                })
     return clients
 
 
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.route("/api/status")
 def api_status():
@@ -73,9 +85,11 @@ def api_status():
     else:
         return jsonify({"status": "stopped"})
 
+
 @app.route("/api/clients")
 def api_clients():
     return jsonify(parse_whazzup_clients())
+
 
 @app.route("/api/restart", methods=["POST"])
 def api_restart():
@@ -85,6 +99,7 @@ def api_restart():
         proc.wait(timeout=5)
     subprocess.Popen([FSD_PATH])
     return jsonify({"message": "✅ Server wurde neu gestartet."})
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
