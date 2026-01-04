@@ -61,7 +61,8 @@ start_fsd() {
         echo -e "${YELLOW}🛫 FSD-Server läuft bereits.${NC}"
     else
         echo -e "${GREEN}✈️  Starte FSD-Server...${NC}"
-        nohup sudo "$FSD_PATH" > "$FSD_LOG" 2>&1 &
+        cd "$BASE_DIR/unix" || { echo "❌ Konnte nicht ins Unix-Verzeichnis wechseln"; return; }
+        nohup sudo ./fsd > "$FSD_LOG" 2>&1 &
         sleep 2
     fi
 }
