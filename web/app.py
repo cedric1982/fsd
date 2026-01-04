@@ -103,6 +103,45 @@ def api_status():
 def api_clients():
     return jsonify(parse_whazzup_clients())
 
+@app.route("/api/logins")
+def api_logins():
+    """Liest letzte Loginversuche aus log.txt"""
+    log_path = "/fsd/unix/log.txt"
+    entries = []
+
+    if not os.path.exists(log_path):
+        return jsonify([])
+
+    with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+        lines = f.readlines()[-50:]  # Nur die letzten 50 Zeilen prüfen
+
+    for line in lines:
+        if "LOGIN" in line or "login" in line:
+            # Beispiel: [2026-01-04 17:42:10] LOGIN: CID=123456 CALLSIGN=MSA151 RESULT=FAILED
+            timestamp = line.split("]")[0].strip("[]") if "]" in line else "?"
+            callsign = "?"
+            cid = "?"
+            result = "?"
+
+            if "CALLSIGN=" in line:
+                callsign = line.split("CALLSIGN=")[1].split()[0]
+            if "CID=" in line:
+                cid = line.split("CID=")[1].split()[0]
+            if "RESULT=" in line:
+                result = line.split("RESULT=")[1].split()[0]
+
+            entries.append({
+                "timestamp": timestamp,
+                "callsign": callsign,
+                "cid": cid,
+                "status": "✅ Erfolgreich" if "OK" in result or "SUCCESS" in result else "❌ Fehler",
+                "message": result
+            })
+
+    return jsonify(entries)
+
+
+
 
 @app.route("/api/restart", methods=["POST"])
 def api_restart():
