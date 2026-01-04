@@ -1,12 +1,13 @@
 #!/bin/bash
 # ==========================================================================
 # FSD Manager – Steuert Webserver + FSD Server gleichzeitig
-# Pfade anpassen falls nötig
 # ==========================================================================
 
-FSD_PATH="/fsd/unix/fsd"
-WEB_PATH="/fsd/web/app.py"
-LOG_DIR="/fsd/logs"
+# Automatisch aktuelles Verzeichnis erkennen
+BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
+FSD_PATH="$BASE_DIR/unix/fsd"
+WEB_PATH="$BASE_DIR/web/app.py"
+LOG_DIR="$BASE_DIR/logs"
 DEBUG_LOG="$LOG_DIR/debug.log"
 FSD_LOG="$LOG_DIR/fsd_output.log"
 
@@ -15,8 +16,20 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # keine Farbe
 
+# Wechsle ins Hauptverzeichnis
+cd "$BASE_DIR" || { echo "❌ Konnte nicht in $BASE_DIR wechseln"; exit 1; }
+
 # Stelle sicher, dass logs/ existiert
 mkdir -p "$LOG_DIR"
+
+# Falls Logdateien nicht existieren, lege sie an und initialisiere sie
+if [ ! -f "$DEBUG_LOG" ]; then
+    echo "[INFO] Flask Debug Log erstellt am $(date)" > "$DEBUG_LOG"
+fi
+if [ ! -f "$FSD_LOG" ]; then
+    echo "[INFO] FSD Output Log erstellt am $(date)" > "$FSD_LOG"
+fi
+
 
 # ------------------------------------------------------------------------------
 # Funktion: prüft, ob Prozess läuft
