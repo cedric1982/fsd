@@ -220,28 +220,32 @@ int absuser::send(char *buf)
    }
    return bytes;
 }
-void absuser::uprintf(char *s, ...)
+void absuser::uprintf(const char *s, ...)
 {
    char b[10000];
    if (killflag) return;
    va_list ap;
    va_start(ap,s);
-   vsprintf(b,s,ap);
+   vsnprintf(b, sizeof(b), s, ap);
    va_end(ap);
+   b[sizeof(b)-1] = 0;
    send(b);
 }
-void absuser::uslprintf(char *s, int check, ...)
+
+void absuser::uslprintf(const char *s, int check, ...)
 {
    char b[10000];
    if (killflag) return;
    va_list ap;
    va_start(ap,check);
-   vsprintf(b,s,ap);
+   vsnprintf(b, sizeof(b), s, ap);
    va_end(ap);
+   b[sizeof(b)-1] = 0;
    if (check&&outbufsoftlimit!=-1&&(strlen(b)+strlen(outbuf))>outbufsoftlimit)
       return;
    send(b);
 }
+
 int absuser::run()
 {
    char buf[1000];
