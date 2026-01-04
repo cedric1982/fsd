@@ -83,5 +83,5 @@ def api_clients():
 
 # === Start ===
 if __name__ == "__main__":
-    print("🚀 Flask-Webserver läuft auf Port 8080 ...")
+    print("🚀 Der Flask-Webserver läuft auf Port 8080 ...")
     app.run(host="0.0.0.0", port=8080)
