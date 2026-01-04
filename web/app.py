@@ -1,19 +1,20 @@
 from flask import Flask, render_template, jsonify
-import psutil
-import subprocess
-import time
-import os
+import os, psutil, time, logging
+
+# Flask-Logs unterdrücken
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+log.disabled = True
 
 app = Flask(__name__)
 
-# Feste Pfade (bitte anpassen, falls du andere nutzt)
-FSD_PATH = "/fsd/unix/fsd"
-WHAZZUP_PATH = "/fsd/unix/whazzup.txt"
-CONF_PATH = "/fsd/unix/fsd.conf"
+# === Pfade ===
+BASE_PATH = "/home/cedric1982/fsd"
+WHAZZUP_PATH = os.path.join(BASE_PATH, "unix/whazzup.txt")
+FSD_PATH = os.path.join(BASE_PATH, "unix/fsd")
 
-
+# === FSD-Prozess finden ===
 def get_fsd_process():
-    """Prüft, ob der FSD-Prozess aktiv ist."""
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
         try:
             if 'fsd' in proc.info['name'] or (
@@ -24,134 +25,63 @@ def get_fsd_process():
             continue
     return None
 
-
+# === Whazzup.txt Parser ===
 def parse_whazzup_clients():
-    """Parst die !CLIENTS-Sektion aus whazzup.txt und gibt Debug-Infos aus"""
     clients = []
     if not os.path.exists(WHAZZUP_PATH):
-        print("❌ whazzup.txt wurde nicht gefunden unter:", WHAZZUP_PATH)
+        print(f"⚠️ Datei nicht gefunden: {WHAZZUP_PATH}")
         return clients
 
-    with open(WHAZZUP_PATH, 'r', encoding='utf-8', errors='ignore') as f:
-        lines = f.readlines()
+    try:
+        with open(WHAZZUP_PATH, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
 
-    in_clients = False
-    print("📡 Starte Parsing von whazzup.txt...")
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-
-        # Starte Clients-Sektion
-        if line.startswith("!CLIENTS:"):
-            in_clients = True
-            print("➡️  !CLIENTS-Sektion erkannt")
-            continue
-
-        # Beende Clients-Sektion bei neuer Kategorie
-        if in_clients and line.startswith("!"):
-            print("⛔ Ende der Clients-Sektion erreicht.")
-            break
-
-        # Wenn innerhalb der Clients-Sektion
-        if in_clients:
-            parts = line.split(":")
-            if len(parts) < 8:
-                print("⚠️  Überspringe unvollständige Zeile:", line)
+        in_clients = False
+        for line in lines:
+            line = line.strip()
+            if line.startswith("!CLIENTS"):
+                in_clients = True
                 continue
+            if line.startswith("!SERVERS"):
+                break
+            if in_clients and line and not line.startswith("!"):
+                parts = line.split(":")
+                if len(parts) >= 7:
+                    clients.append({
+                        "callsign": parts[0],
+                        "cid": parts[1],
+                        "name": parts[2],
+                        "lat": parts[4],
+                        "lon": parts[5],
+                        "alt": parts[6]
+                    })
+        print(f"✅ Insgesamt {len(clients)} Clients gefunden.")
+        return clients
 
-            callsign = parts[0]
-            client_type = parts[4] if len(parts) > 4 else "?"
-            lat = parts[5] if len(parts) > 5 else "?"
-            lon = parts[6] if len(parts) > 6 else "?"
-            alt = parts[7] if len(parts) > 7 else "?"
+    except Exception as e:
+        print(f"❌ Fehler beim Parsen von whazzup.txt: {e}")
+        return clients
 
-            clients.append({
-                "callsign": callsign,
-                "type": client_type,
-                "lat": lat,
-                "lon": lon,
-                "alt": alt
-            })
-            print(f"✅ Client erkannt: {callsign}, Typ: {client_type}, Pos: ({lat}, {lon})")
-
-    print(f"🔍 Insgesamt {len(clients)} Clients gefunden.")
-    return clients
-
-
-
+# === API ===
 @app.route("/")
 def index():
     return render_template("index.html")
 
-
 @app.route("/api/status")
 def api_status():
     proc = get_fsd_process()
-    if proc:
-        uptime = time.time() - proc.create_time()
-        return jsonify({
-            "status": "running",
-            "pid": proc.pid,
-            "uptime": f"{int(uptime // 60)} min"
-        })
-    else:
-        return jsonify({"status": "stopped"})
-
+    status = {
+        "running": bool(proc),
+        "pid": proc.pid if proc else None,
+        "uptime": int(time.time() - proc.create_time()) if proc else 0,
+    }
+    return jsonify(status)
 
 @app.route("/api/clients")
 def api_clients():
     return jsonify(parse_whazzup_clients())
 
-@app.route("/api/logins")
-def api_logins():
-    """Liest letzte Loginversuche aus log.txt"""
-    log_path = "/fsd/unix/log.txt"
-    entries = []
-
-    if not os.path.exists(log_path):
-        return jsonify([])
-
-    with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-        lines = f.readlines()[-50:]  # Nur die letzten 50 Zeilen prüfen
-
-    for line in lines:
-        if "LOGIN" in line or "login" in line:
-            # Beispiel: [2026-01-04 17:42:10] LOGIN: CID=123456 CALLSIGN=MSA151 RESULT=FAILED
-            timestamp = line.split("]")[0].strip("[]") if "]" in line else "?"
-            callsign = "?"
-            cid = "?"
-            result = "?"
-
-            if "CALLSIGN=" in line:
-                callsign = line.split("CALLSIGN=")[1].split()[0]
-            if "CID=" in line:
-                cid = line.split("CID=")[1].split()[0]
-            if "RESULT=" in line:
-                result = line.split("RESULT=")[1].split()[0]
-
-            entries.append({
-                "timestamp": timestamp,
-                "callsign": callsign,
-                "cid": cid,
-                "status": "✅ Erfolgreich" if "OK" in result or "SUCCESS" in result else "❌ Fehler",
-                "message": result
-            })
-
-    return jsonify(entries)
-
-
-
-
-@app.route("/api/restart", methods=["POST"])
-def api_restart():
-    proc = get_fsd_process()
-    if proc:
-        proc.terminate()
-        proc.wait(timeout=5)
-    subprocess.Popen([FSD_PATH])
-    return jsonify({"message": "✅ Server wurde neu gestartet."})
-
-
+# === Start ===
 if __name__ == "__main__":
+    print("🚀 Flask-Webserver läuft auf Port 8080 ...")
     app.run(host="0.0.0.0", port=8080)
