@@ -5,7 +5,6 @@ import time
 import os
 import sqlite3
 import json, os, time, threading
-from pathlib import Path
 
 # === Konfiguration (relocatable) ===
 from pathlib import Path
