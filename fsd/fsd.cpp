@@ -413,8 +413,8 @@ void fsd::writestatus()
         Json::Value cl;
         cl["callsign"] = c->callsign ? c->callsign : "";
         cl["type"] = c->type ? c->type : "";
-        cl["lat"] = c->latitude;
-        cl["lon"] = c->longitude;
+        cl["lat"] = c->lat;
+        cl["lon"] = c->lon;
         cl["alt"] = c->altitude;
         clients.append(cl);
     }
