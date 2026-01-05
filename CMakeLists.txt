@@ -47,6 +47,10 @@ add_executable(fsd
         fsd/user.h
         fsd/wprofile.cpp
         fsd/wprofile.h)
+
+find_package(SQLite3 REQUIRED)
+target_link_libraries(fsd sqlite3)
+
 set_property(TARGET fsd PROPERTY CXX_STANDARD 20)
 set_property(TARGET fsd PROPERTY CXX_STANDARD_REQUIRED ON)
 
