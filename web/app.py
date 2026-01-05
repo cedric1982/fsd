@@ -225,25 +225,26 @@ def api_clients():
 # --- Benutzer anzeigen ---
 @app.route("/users")
 def users():
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute("SELECT cid, password, level FROM cert ORDER BY cid ASC")
-        users = c.fetchall()
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
 
-        # nächste CID berechnen
-        if users:
-            max_cid = max(int(u[0]) for u in users if str(u[0]).isdigit())
-            next_cid = max_cid + 1
-        else:
-            next_cid = 1000001  # Startwert, falls DB leer
+    c.execute("SELECT cid, password, level FROM cert ORDER BY cid ASC")
+    users = c.fetchall()
 
-        conn.close()
+    if users:
+        max_cid = max(int(u[0]) for u in users if str(u[0]).isdigit())
+        next_cid = max_cid + 1
+    else:
+        next_cid = 1000001
+
+    conn.close()
 
     return render_template(
         "users.html",
         users=users,
         next_cid=next_cid
     )
+
 
 
 # --- Benutzer hinzufügen ---
