@@ -412,7 +412,7 @@ void fsd::writestatus()
     {
         Json::Value cl;
         cl["callsign"] = c->callsign ? c->callsign : "";
-        cl["type"] = c->type ? c->type : "";
+        cl["type"] = (c->type == CLIENT_PILOT) ? "PILOT" : "ATC";
         cl["lat"] = c->lat;
         cl["lon"] = c->lon;
         cl["alt"] = c->altitude;
