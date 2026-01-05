@@ -15,6 +15,9 @@
 #include "mm.h"
 #include "config.h"
 #include "protocol.h"
+#include <json/json.h>
+#include <fstream>
+#include <unistd.h>
 
 clinterface *clientinterface=NULL;
 servinterface *serverinterface=NULL;
@@ -375,6 +378,38 @@ void fsd::readcert()
       }
 	   temp=next;
    }
+}
+void fsd::writestatus()
+{
+    Json::Value root;
+
+    // --- Allgemeine Server-Infos ---
+    root["status"] = "running";
+    root["pid"] = (int)getpid();
+    root["uptime"] = (int)(time(NULL) - timer);
+
+    // --- Aktive Clients (Beispiel aus clientlist) ---
+    Json::Value clients(Json::arrayValue);
+    for (client *c = clientlist; c; c = c->next)
+    {
+        Json::Value cl;
+        cl["callsign"] = c->callsign ? c->callsign : "";
+        cl["type"] = c->type ? c->type : "";
+        cl["lat"] = c->latitude;
+        cl["lon"] = c->longitude;
+        cl["alt"] = c->altitude;
+        clients.append(cl);
+    }
+
+    root["clients"] = clients;
+
+    // --- Datei schreiben ---
+    std::ofstream file("/home/cedric1982/fsd/logs/status.json");
+    if (file.is_open())
+    {
+        file << root.toStyledString();
+        file.close();
+    }
 }
 void fsd::createmanagevars()
 {
