@@ -35,12 +35,19 @@ start_webserver() {
     if is_running "app.py"; then
         echo -e "${YELLOW}⚠️ Flask-Webserver läuft bereits.${NC}"
     else
-        echo -e "${GREEN}🚀 Starte Flask Webserver...${NC}"
+        echo -e "${GREEN}🚀 Starte Flask Webserver (mit virtueller Umgebung)...${NC}"
         cd "$BASE_DIR/web" || exit
-        nohup python3 "$WEB_PATH" >> "$DEBUG_LOG" 2>&1 &
+
+        # Virtuelle Umgebung aktivieren
+        source "$BASE_DIR/venv/bin/activate"
+
+        # Flask im Hintergrund starten
+        nohup python "$WEB_PATH" >> "$DEBUG_LOG" 2>&1 &
+
         sleep 2
     fi
 }
+
 
 # ==========================================================
 # FSD Server starten
