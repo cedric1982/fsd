@@ -339,15 +339,12 @@ void fsd::initdb()
 {
    if (!certfile) return;
    int rc;
-
    rc = sqlite3_open(certfile, &certdb);
-
    if (rc) {
       dolog(L_ERR, "Can't open database: %s", sqlite3_errmsg(certdb));
       sqlite3_close(certdb);
       return;
    }
-
    char *zErrMsg = 0;
    rc = sqlite3_exec(certdb, "CREATE TABLE cert(callsign TEXT PRIMARY KEY NOT NULL, password TEXT NOT NULL, level INT NOT NULL);", (int (*)(void *, int, char**, char**))NULL, 0, &zErrMsg);
    if( rc != SQLITE_OK ){
