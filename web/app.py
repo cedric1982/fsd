@@ -1,8 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask_socketio import SocketIO, emit
 import psutil
 import time
 import os
 import sqlite3
+import json, os, time, threading
+from pathlib import Path
 
 # === Konfiguration ===
 FSD_PATH = "/home/cedric1982/fsd/unix/fsd"
@@ -10,6 +13,63 @@ WHAZZUP_PATH = "/home/cedric1982/fsd/unix/whazzup.txt"
 DB_PATH = "/home/cedric1982/fsd/unix/cert.sqlitedb3"
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+STATUS_FILE = Path("/home/cedric1982/fsd/logs/status.json")
+last_mtime = 0
+
+# -------------------------------------------------------------------
+# Dashboard (wird nur einmal geladen – danach WebSocket live updates)
+# -------------------------------------------------------------------
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+# -------------------------------------------------------------------
+# Datei-Watcher (überwacht status.json auf Änderungen)
+# -------------------------------------------------------------------
+def watch_status_file():
+    global last_mtime
+    while True:
+        if STATUS_FILE.exists():
+            mtime = STATUS_FILE.stat().st_mtime
+            if mtime != last_mtime:
+                last_mtime = mtime
+                try:
+                    with open(STATUS_FILE, "r") as f:
+                        data = json.load(f)
+                        socketio.emit("status_update", data)
+                except Exception as e:
+                    print("⚠️ Fehler beim Lesen von status.json:", e)
+        time.sleep(2)
+
+
+# -------------------------------------------------------------------
+# SocketIO-Events
+# -------------------------------------------------------------------
+@socketio.on("connect")
+def handle_connect():
+    print("✅ WebSocket verbunden:", request.sid)
+    if STATUS_FILE.exists():
+        try:
+            with open(STATUS_FILE, "r") as f:
+                data = json.load(f)
+                emit("status_update", data)
+        except:
+            pass
+
+
+# -------------------------------------------------------------------
+# Start des Servers + Hintergrund-Thread
+# -------------------------------------------------------------------
+if __name__ == "__main__":
+    watcher_thread = threading.Thread(target=watch_status_file, daemon=True)
+    watcher_thread.start()
+    print("🚀 Flask-SocketIO Server läuft auf Port 8080")
+    socketio.run(app, host="0.0.0.0", port=8080, debug=False
+
+
 
 # === FSD-Prozessprüfung ===
 def get_fsd_process():
