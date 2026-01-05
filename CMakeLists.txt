@@ -81,4 +81,6 @@ if(FSD_ENABLE_SANITIZERS)
     target_link_options(fsd PRIVATE -fsanitize=address,undefined)
   endif()
 endif()
+find_package(jsoncpp REQUIRED)
+target_link_libraries(fsd sqlite3 jsoncpp)
 
