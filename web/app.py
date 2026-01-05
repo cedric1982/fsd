@@ -224,7 +224,7 @@ def api_clients():
 
 # --- Benutzer anzeigen ---
 @app.route("/users")
-    def users():
+def users():
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute("SELECT cid, password, level FROM cert ORDER BY cid ASC")
