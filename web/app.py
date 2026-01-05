@@ -149,8 +149,6 @@ def parse_whazzup_clients():
 
 
 # === API ===
-@app.route("/")
-
 @app.route("/api/status")
 def api_status():
     proc = get_fsd_process()
