@@ -342,7 +342,13 @@
                 <form method="POST" action="/add_user" class="row g-3">
                   <div class="col-12">
                     <label class="form-label">CID</label>
-                    <input type="text" class="form-control" name="cid" placeholder="z.B. 1000001" required>
+                    <input type="text"
+                         class="form-control"
+                         name="cid"
+                         value="{{ next_cid }}"
+                         required
+                     readonly>
+
                   </div>
 
                   <div class="col-12">
