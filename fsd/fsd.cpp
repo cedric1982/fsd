@@ -335,6 +335,7 @@ int fsd::handlecidline(void *data, int argc, char **argv, char **azColName)
    if (serverinterface) serverinterface->sendcert("*", mode, tempcert, NULL);
 	return 0;
 }
+}
 void fsd::initdb()
 {
    if (!certfile) return;
