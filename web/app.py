@@ -63,6 +63,7 @@ def watch_status_file():
 @socketio.on("connect")
 def handle_connect():
     print("✅ WebSocket verbunden:", request.sid)
+    emit("fsd_status", get_fsd_status_payload())
     if STATUS_FILE.exists():
         try:
             with open(STATUS_FILE, "r") as f:
