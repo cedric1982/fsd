@@ -369,7 +369,7 @@ void fsd::configure()
 }
 int fsd::handlecidline(void *data, int argc, char **argv, char **azColName)
 {
-   if (strcmp(azColName[0], "callsign")||strcmp(azColName[1], "password")||strcmp(azColName[2], "level"))
+   if (strcmp(azColName[0], "cid")||strcmp(azColName[1], "password")||strcmp(azColName[2], "level"))
    {
       dolog(L_ERR, "Invaild cert database format");
       return 1;
@@ -406,7 +406,7 @@ void fsd::initdb()
       return;
    }
    char *zErrMsg = 0;
-   rc = sqlite3_exec(certdb, "CREATE TABLE cert(callsign TEXT PRIMARY KEY NOT NULL, password TEXT NOT NULL, level INT NOT NULL);", (int (*)(void *, int, char**, char**))NULL, 0, &zErrMsg);
+   rc = sqlite3_exec(certdb, "CREATE TABLE cert(cid TEXT PRIMARY KEY NOT NULL, password TEXT NOT NULL, level INT NOT NULL);", (int (*)(void *, int, char**, char**))NULL, 0, &zErrMsg);
    if( rc != SQLITE_OK ){
       sqlite3_free(zErrMsg);
    }
