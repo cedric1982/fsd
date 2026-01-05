@@ -142,9 +142,6 @@ def parse_whazzup_clients():
 
 # === API ===
 @app.route("/")
-def index():
-    return render_template("index.html")
-
 
 @app.route("/api/status")
 def api_status():
