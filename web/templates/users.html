@@ -164,36 +164,26 @@
     }
     .btn-ghost:hover{ background: rgba(255,255,255,.06); color: #fff; }
 
-    /* Tables */
-    .table-darkish{ margin: 0; color: var(--text); }
-    .table-darkish thead th{
-      color: #d6dbe3;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      border-bottom: 1px solid var(--border);
-      background: var(--panel-2);
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    .table-darkish tbody td{
-      border-bottom: 1px solid var(--border);
-      color: var(--text);
-      font-size: 13px;
-      vertical-align: middle;
-    }
+    /* Tabellen komplett "dark" erzwingen */
+.table-darkish {
+  background: var(--panel);
+}
 
-    .table-wrap{
-      max-height: 420px;
-      overflow: auto;
-    }
+.table-darkish tbody,
+.table-darkish tbody tr,
+.table-darkish tbody td {
+  background: var(--panel) !important;
+}
 
-    .empty{
-      padding: 18px;
-      color: var(--muted);
-      font-size: 13px;
-    }
+.table-darkish.table-hover tbody tr:hover td,
+.table-darkish.table-hover tbody tr:hover th {
+  background: rgba(255,255,255,.04) !important;
+}
+
+/* Optional: Badge-Elemente im Table-Body ebenfalls nicht "hell" wirken lassen */
+.table-darkish .badge-soft {
+  background: rgba(255,255,255,.04);
+}
 
     /* Form controls */
     .form-control, .form-select{
