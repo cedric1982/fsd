@@ -92,6 +92,38 @@ else
     echo -e "${YELLOW}⚠️ Datenbank existiert bereits – überspringe.${NC}"
 fi
 
+# ==========================================================
+# SQLite-Datenbank für Benutzer erstellen
+# ==========================================================
+
+echo -e "\n${YELLOW}📦 Erstelle SQLite-Datenbank für Benutzer...${NC}"
+
+DB_PATH="$BASE_DIR/unix/cert.sqlitedb3"
+
+# Falls alte Datenbank existiert -> löschen
+if [ -f "$DB_PATH" ]; then
+    rm "$DB_PATH"
+fi
+
+# Neue Datenbank und Tabelle erstellen
+sqlite3 "$DB_PATH" <<EOF
+CREATE TABLE cert (
+    callsign TEXT PRIMARY KEY NOT NULL,
+    password TEXT NOT NULL,
+    level INT NOT NULL
+);
+
+INSERT INTO cert (callsign, password, level) VALUES
+('ADMIN01', 'admin123', 5),
+('TEST01', 'test123', 1);
+EOF
+
+# Rechte setzen
+chmod 644 "$DB_PATH"
+
+echo -e "${GREEN}✅ SQLite-Datenbank erstellt unter:${NC} $DB_PATH"
+echo -e "${YELLOW}→ Benutzer hinzugefügt: ADMIN01 / TEST01${NC}"
+
 
 # -------------------------------
 # 6. Beerechtigungen prüfen
