@@ -75,6 +75,12 @@ fsd::~fsd()
 void fsd::dochecks()
 {
    time_t now=mtime();
+	//status update
+	if (difftime(now, prevnotify) >= 5)
+	{
+		writestatus();
+		prevnotify = now;
+	}
    if ((now-prevnotify)>NOTIFYCHECK)
    {
       configgroup *sgroup=configman->getgroup("system");
