@@ -60,14 +60,7 @@ def handle_connect():
             pass
 
 
-# -------------------------------------------------------------------
-# Start des Servers + Hintergrund-Thread
-# -------------------------------------------------------------------
-if __name__ == "__main__":
-    watcher_thread = threading.Thread(target=watch_status_file, daemon=True)
-    watcher_thread.start()
-    print("🚀 Flask-SocketIO Server läuft auf Port 8080")
-    socketio.run(app, host="0.0.0.0", port=8080, debug=False)
+
 
 
 
@@ -220,3 +213,12 @@ def delete_user(callsign):
     conn.close()
     return redirect(url_for("users"))
 
+
+# -------------------------------------------------------------------
+# Start des Servers + Hintergrund-Thread
+# -------------------------------------------------------------------
+if __name__ == "__main__":
+    watcher_thread = threading.Thread(target=watch_status_file, daemon=True)
+    watcher_thread.start()
+    print("🚀 Flask-SocketIO Server läuft auf Port 8080")
+    socketio.run(app, host="0.0.0.0", port=8080, debug=False)
