@@ -250,17 +250,29 @@ def users():
 # --- Benutzer hinzufügen ---
 @app.route("/add_user", methods=["POST"])
 def add_user():
-    cid = request.form["cid"].strip()
-    callsign = request.form["callsign"].strip().upper()
-    password = request.form["password"].strip()
-    level = int(request.form["level"])
+    cid = request.form.get("cid", "").strip()
+    password = request.form.get("password", "").strip()
+    level_raw = request.form.get("level", "1").strip()
+
+    if not cid or not password:
+        return "Missing cid or password", 400
+
+    try:
+        level = int(level_raw)
+    except ValueError:
+        return "Invalid level", 400
 
     conn = sqlite3.connect(str(DB_PATH))
     c = conn.cursor()
-    c.execute("INSERT OR REPLACE INTO cert (cid, callsign, password, level) VALUES (?, ?, ?)", (cid, callsign, password, level))
+    c.execute(
+        "INSERT OR REPLACE INTO cert (cid, password, level) VALUES (?, ?, ?)",
+        (cid, password, level)
+    )
     conn.commit()
     conn.close()
+
     return redirect(url_for("users"))
+
 
 # --- Benutzer löschen ---
 @app.route("/delete_user/<cid>")
