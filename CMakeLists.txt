@@ -51,6 +51,9 @@ add_executable(fsd
 find_package(SQLite3 REQUIRED)
 target_link_libraries(fsd sqlite3)
 
+find_package(jsoncpp REQUIRED)
+target_link_libraries(fsd sqlite3 jsoncpp)
+
 set_property(TARGET fsd PROPERTY CXX_STANDARD 20)
 set_property(TARGET fsd PROPERTY CXX_STANDARD_REQUIRED ON)
 
@@ -81,6 +84,5 @@ if(FSD_ENABLE_SANITIZERS)
     target_link_options(fsd PRIVATE -fsanitize=address,undefined)
   endif()
 endif()
-find_package(jsoncpp REQUIRED)
-target_link_libraries(fsd sqlite3 jsoncpp)
+
 
