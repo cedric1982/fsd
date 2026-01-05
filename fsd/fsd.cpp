@@ -370,7 +370,7 @@ void fsd::readcert()
       certificate *next=temp->next;
 	   if (!temp->livecheck)
       {
-        serverinterface->sendcert("*", CERT_DELETE, temp, NULL):
+        serverinterface->sendcert("*", CERT_DELETE, temp, NULL);
 		delete temp;
       }
 	   temp=next;
