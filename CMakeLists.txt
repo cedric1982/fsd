@@ -49,10 +49,12 @@ add_executable(fsd
         fsd/wprofile.h)
 
 find_package(SQLite3 REQUIRED)
-target_link_libraries(fsd sqlite3)
 
-find_package(jsoncpp REQUIRED)
+# Jsoncpp hinzufügen
+include_directories(/usr/include/jsoncpp)
 target_link_libraries(fsd sqlite3 jsoncpp)
+
+
 
 set_property(TARGET fsd PROPERTY CXX_STANDARD 20)
 set_property(TARGET fsd PROPERTY CXX_STANDARD_REQUIRED ON)
