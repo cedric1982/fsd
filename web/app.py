@@ -88,6 +88,27 @@ def get_fsd_process():
             continue
     return None
 
+def get_fsd_status_payload():
+    proc = get_fsd_process()
+    if not proc:
+        return {"status": "stopped", "pid": None, "uptime_sec": 0}
+
+    try:
+        pid = proc.pid
+        uptime_sec = int(time.time() - proc.create_time())
+        return {"status": "running", "pid": pid, "uptime_sec": uptime_sec}
+    except Exception as e:
+        return {"status": f"error: {e}", "pid": None, "uptime_sec": 0}
+
+
+def status_broadcaster():
+    # Sendet kontinuierlich Live-Status an alle verbundenen Clients
+    while True:
+        socketio.emit("fsd_status", get_fsd_status_payload())
+        socketio.sleep(1)  # eventlet-/gevent-freundlich
+
+
+
 
 # === Whazzup.txt Parser ===
 def parse_whazzup_clients():
@@ -225,7 +246,8 @@ def delete_user(callsign):
 # Start des Servers + Hintergrund-Thread
 # -------------------------------------------------------------------
 if __name__ == "__main__":
-    watcher_thread = threading.Thread(target=watch_status_file, daemon=True)
-    watcher_thread.start()
+    socketio.start_background_task(watch_status_file)
+    socketio.start_background_task(status_broadcaster)
+
     print("🚀 Flask-SocketIO Server läuft auf Port 8080")
     socketio.run(app, host="0.0.0.0", port=8080, debug=False)
