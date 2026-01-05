@@ -2,49 +2,140 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FSD Server Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css">
+
+    <!-- Bootstrap 5 Dark Theme -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+        .sidebar {
+            background-color: #161b22;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .sidebar a {
+            color: #8b949e;
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+        }
+        .sidebar a.active {
+            color: #fff;
+            font-weight: bold;
+        }
+        .card {
+            background-color: #1e2329;
+            border: none;
+            color: #c9d1d9;
+        }
+        .table {
+            color: #c9d1d9;
+        }
+        .table thead {
+            background-color: #21262d;
+        }
+        .btn-primary {
+            background-color: #238636;
+            border-color: #238636;
+        }
+        .btn-primary:hover {
+            background-color: #2ea043;
+        }
+    </style>
 </head>
 <body>
-    <h1>FSD Server Dashboard</h1>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Seitenleiste -->
+        <nav class="col-md-2 d-none d-md-block sidebar">
+            <h4 class="text-white mb-4">🧭 FSD Manager</h4>
+            <a href="#" class="active">Dashboard</a>
+            <a href="#">Clients</a>
+            <a href="#">Logs</a>
+            <a href="#">Einstellungen</a>
+        </nav>
 
-    <div id="status-box">
-        <p>Status: <span id="status">-</span></p>
-        <p>PID: <span id="pid">-</span></p>
-        <p>Uptime: <span id="uptime">-</span></p>
-        <button id="restart">🔄 Neustarten</button>
+        <!-- Hauptinhalt -->
+        <main class="col-md-10 ms-sm-auto px-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h3 text-white">FSD Server Dashboard</h1>
+            </div>
+
+            <!-- Server-Status -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card text-center p-3">
+                        <h5>Status:</h5>
+                        <p class="fs-4">{{ status }}</p>
+                        <h6>PID: {{ pid }}</h6>
+                        <h6>Uptime: {{ uptime }}</h6>
+                        <button class="btn btn-primary mt-3">🔄 Neustarten</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aktive Clients -->
+            <div class="card p-3 mb-4">
+                <h4>🛫 Aktive Clients</h4>
+                <table class="table mt-3">
+                    <thead>
+                        <tr>
+                            <th>Callsign</th>
+                            <th>Typ</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                            <th>Altitude</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in clients %}
+                        <tr>
+                            <td>{{ c.callsign }}</td>
+                            <td>{{ c.type }}</td>
+                            <td>{{ c.lat }}</td>
+                            <td>{{ c.lon }}</td>
+                            <td>{{ c.alt }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Letzte Loginversuche -->
+            <div class="card p-3">
+                <h4>🔐 Letzte Loginversuche</h4>
+                <table class="table mt-3">
+                    <thead>
+                        <tr>
+                            <th>Zeit</th>
+                            <th>Callsign</th>
+                            <th>CID</th>
+                            <th>Status</th>
+                            <th>Nachricht</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in logins %}
+                        <tr>
+                            <td>{{ l.time }}</td>
+                            <td>{{ l.callsign }}</td>
+                            <td>{{ l.cid }}</td>
+                            <td>{{ l.status }}</td>
+                            <td>{{ l.msg }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
     </div>
+</div>
 
-    <h2>Aktive Clients</h2>
-    <table id="clients">
-        <thead>
-            <tr>
-                <th>Callsign</th>
-                <th>Typ</th>
-                <th>Latitude</th>
-                <th>Longitude</th>
-                <th>Altitude</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-
-    <h2>Letzte Loginversuche</h2>
-<table id="logins">
-    <thead>
-        <tr>
-            <th>Zeit</th>
-            <th>Callsign</th>
-            <th>CID</th>
-            <th>Status</th>
-            <th>Nachricht</th>
-        </tr>
-    </thead>
-    <tbody></tbody>
-</table>
-
-    
-    <script src="/static/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
