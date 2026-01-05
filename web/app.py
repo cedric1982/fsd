@@ -227,7 +227,7 @@ def api_clients():
 def users():
     conn = sqlite3.connect(str(DB_PATH))
     c = conn.cursor()
-    c.execute("CREATE TABLE IF NOT EXISTS cert (callsign TEXT PRIMARY KEY NOT NULL, password TEXT NOT NULL, level INT NOT NULL)")
+    c.execute("CREATE TABLE IF NOT EXISTS cert (cid TEXT PRIMARY KEY NOT NULL, callsign TEXT PRIMARY KEY NOT NULL, password TEXT NOT NULL, level INT NOT NULL)")
     c.execute("SELECT * FROM cert")
     users = c.fetchall()
     conn.close()
@@ -236,23 +236,24 @@ def users():
 # --- Benutzer hinzufügen ---
 @app.route("/add_user", methods=["POST"])
 def add_user():
+    cid = request.form["cid"].strip()
     callsign = request.form["callsign"].strip().upper()
     password = request.form["password"].strip()
     level = int(request.form["level"])
 
     conn = sqlite3.connect(str(DB_PATH))
     c = conn.cursor()
-    c.execute("INSERT OR REPLACE INTO cert (callsign, password, level) VALUES (?, ?, ?)", (callsign, password, level))
+    c.execute("INSERT OR REPLACE INTO cert (cid, callsign, password, level) VALUES (?, ?, ?)", (cid, callsign, password, level))
     conn.commit()
     conn.close()
     return redirect(url_for("users"))
 
 # --- Benutzer löschen ---
-@app.route("/delete_user/<callsign>")
+@app.route("/delete_user/<cid>")
 def delete_user(callsign):
     conn = sqlite3.connect(str(DB_PATH))
     c = conn.cursor()
-    c.execute("DELETE FROM cert WHERE callsign = ?", (callsign,))
+    c.execute("DELETE FROM cert WHERE cid = ?", (callsign,))
     conn.commit()
     conn.close()
     return redirect(url_for("users"))
