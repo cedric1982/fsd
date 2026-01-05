@@ -114,11 +114,11 @@ CREATE TABLE IF NOT EXISTS cert (
     level INT NOT NULL
 );
 
-INSERT OR REPLACE INTO cert (cid, callsign, password, level)
-VALUES ('1000001', 'ADMIN01', 'admin123', 5);
+INSERT OR REPLACE INTO cert (cid, password, level)
+VALUES ('1000001', 'admin123', 5);
 
-INSERT OR REPLACE INTO cert (cid, callsign, password, level)
-VALUES ('1000002', 'TEST01', 'test123', 1);
+INSERT OR REPLACE INTO cert (cid, password, level)
+VALUES ('1000002', 'test123', 1);
 SQL
 
 chmod 644 "$DB_PATH"
