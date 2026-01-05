@@ -1,33 +1,31 @@
 from flask import Flask, render_template, jsonify
-import os, psutil, time, logging
+import psutil
+import time
+import os
 
-# Flask-Logs unterdrücken
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
-log.disabled = True
+# === Konfiguration ===
+FSD_PATH = "/home/cedric1982/fsd/unix/fsd"
+WHAZZUP_PATH = "/home/cedric1982/fsd/unix/whazzup.txt"
 
 app = Flask(__name__)
 
-# === Pfade ===
-BASE_PATH = "/home/cedric1982/fsd"
-WHAZZUP_PATH = os.path.join(BASE_PATH, "unix/whazzup.txt")
-FSD_PATH = os.path.join(BASE_PATH, "unix/fsd")
-
-# === FSD-Prozess finden ===
+# === FSD-Prozessprüfung ===
 def get_fsd_process():
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
         try:
-            if 'fsd' in proc.info['name'] or (
-                proc.info['cmdline'] and FSD_PATH in " ".join(proc.info['cmdline'])
-            ):
+            if 'fsd' in proc.info['name'].lower():
+                return proc
+            if proc.info['cmdline'] and any('fsd' in cmd.lower() for cmd in proc.info['cmdline']):
                 return proc
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
     return None
 
+
 # === Whazzup.txt Parser ===
 def parse_whazzup_clients():
     clients = []
+
     if not os.path.exists(WHAZZUP_PATH):
         print(f"⚠️ Datei nicht gefunden: {WHAZZUP_PATH}")
         return clients
@@ -39,49 +37,92 @@ def parse_whazzup_clients():
         in_clients = False
         for line in lines:
             line = line.strip()
+            if not line:
+                continue
+
             if line.startswith("!CLIENTS"):
                 in_clients = True
                 continue
-            if line.startswith("!SERVERS"):
+            elif line.startswith("!SERVERS"):
                 break
-            if in_clients and line and not line.startswith("!"):
+
+            if in_clients and not line.startswith(";"):
                 parts = line.split(":")
-                if len(parts) >= 7:
-                    clients.append({
-                        "callsign": parts[0],
-                        "cid": parts[1],
-                        "name": parts[2],
-                        "lat": parts[4],
-                        "lon": parts[5],
-                        "alt": parts[6]
-                    })
-        print(f"✅ Insgesamt {len(clients)} Clients gefunden.")
+
+                if len(parts) < 8:
+                    continue
+
+                callsign = parts[0]
+                cid = parts[1]
+                realname = parts[2]
+
+                if parts[3].upper() in ["PILOT", "ATC"]:
+                    client_type = parts[3]
+                    lat = parts[5]
+                    lon = parts[6]
+                    alt = parts[7] if len(parts) > 7 else "0"
+                else:
+                    client_type = "UNKNOWN"
+                    lat = parts[4]
+                    lon = parts[5]
+                    alt = parts[6] if len(parts) > 6 else "0"
+
+                clients.append({
+                    "callsign": callsign,
+                    "cid": cid,
+                    "realname": realname,
+                    "type": client_type,
+                    "lat": lat,
+                    "lon": lon,
+                    "alt": alt
+                })
+
+        print(f"✅ {len(clients)} Clients erfolgreich geparst.")
         return clients
 
     except Exception as e:
-        print(f"❌ Fehler beim Parsen von whazzup.txt: {e}")
+        print(f"❌ Fehler beim Parsen von {WHAZZUP_PATH}: {e}")
         return clients
+
 
 # === API ===
 @app.route("/")
 def index():
     return render_template("index.html")
 
+
 @app.route("/api/status")
 def api_status():
     proc = get_fsd_process()
-    status = {
-        "running": bool(proc),
-        "pid": proc.pid if proc else None,
-        "uptime": int(time.time() - proc.create_time()) if proc else 0,
-    }
-    return jsonify(status)
+
+    if proc:
+        try:
+            pid = proc.pid
+            create_time = proc.create_time()
+            uptime_sec = time.time() - create_time
+            uptime_min = int(uptime_sec // 60)
+            status = "running"
+        except Exception as e:
+            status = f"error: {e}"
+            pid = None
+            uptime_min = 0
+    else:
+        status = "stopped"
+        pid = None
+        uptime_min = 0
+
+    return jsonify({
+        "status": status,
+        "pid": pid,
+        "uptime": f"{uptime_min} min"
+    })
+
 
 @app.route("/api/clients")
 def api_clients():
-    return jsonify(parse_whazzup_clients())
+    clients = parse_whazzup_clients()
+    return jsonify(clients)
 
-# === Start ===
+
 if __name__ == "__main__":
-    print("🚀 Der Flask-Webserver läuft auf Port 8080 ...")
     app.run(host="0.0.0.0", port=8080)
