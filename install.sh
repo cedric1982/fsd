@@ -53,7 +53,7 @@ source "$VENV_DIR/bin/activate"
 # -------------------------------
 echo -e "${GREEN}📚 Installiere Flask, psutil & flask-cors...${NC}"
 pip install --upgrade pip
-pip install flask psutil flask-cors
+pip install flask psutil flask-cors flask-socketio eventlet
 
 # -------------------------------
 # 4. Verzeichnisse & Berechtigungen
