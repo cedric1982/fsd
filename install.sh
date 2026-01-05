@@ -77,6 +77,16 @@ fi
 cd build
 cmake ..
 make -j$(nproc)
+# Prüfen, ob fsd erfolgreich kompiliert wurde und in unix kopieren
+if [ -f "$BASE_DIR/build/fsd" ]; then
+    echo "✅ FSD erfolgreich kompiliert, kopiere nach unix/..."
+    cp "$BASE_DIR/build/fsd" "$BASE_DIR/unix/fsd"
+    chmod +x "$BASE_DIR/unix/fsd"
+else
+    echo "❌ Fehler: fsd wurde nicht im build-Ordner gefunden!"
+fi
+rm -rf "$BASE_DIR/build"
+
 echo -e "${GREEN}✅ FSD Server erfolgreich gebaut.${NC}"
 
 # -------------------------------
