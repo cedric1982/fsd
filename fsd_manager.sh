@@ -2,13 +2,26 @@
 # ==========================================================
 # ✦ FSD Manager - Startet Webserver (Flask) und FSD Server ✦
 # ==========================================================
+# ----------------------------------------------------------
+# BASE_DIR automatisch aus dem Speicherort dieses Scripts
+# ----------------------------------------------------------
+SCRIPT_PATH="$(readlink -f "$0")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
-BASE_DIR="/home/cedric1982/fsd"
+# Wenn fsd_manager.sh im Projektroot liegt, ist BASE_DIR = SCRIPT_DIR
+BASE_DIR="$SCRIPT_DIR"
+
+# Optional: Falls du fsd_manager.sh in <base>/bin/ ablegst, nimm parent:
+# BASE_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Pfade relativ zum BASE_DIR
 FSD_PATH="$BASE_DIR/unix/fsd"
 WEB_PATH="$BASE_DIR/web/app.py"
 LOG_DIR="$BASE_DIR/logs"
 DEBUG_LOG="$LOG_DIR/debug.log"
 FSD_LOG="$LOG_DIR/fsd_output.log"
+VENV_ACTIVATE="$BASE_DIR/venv/bin/activate"
+
 
 # Farben
 GREEN='\033[0;32m'
@@ -71,7 +84,7 @@ start_webserver() {
         print_output "${YELLOW}⚠️ Flask-Webserver läuft bereits.${NC}"
     else
         cd "$BASE_DIR/web" || exit
-        source "$BASE_DIR/venv/bin/activate"
+        source "$VENV_ACTIVATE"
         nohup python "$WEB_PATH" >> "$DEBUG_LOG" 2>&1 &
         sleep 2
         print_output "${GREEN}✅ Flask-Webserver gestartet (PID: $(pgrep -f app.py))${NC}"
@@ -84,7 +97,7 @@ start_fsd_server() {
         print_output "${YELLOW}⚠️ FSD-Server läuft bereits.${NC}"
     else
         cd "$BASE_DIR/unix" || exit
-        nohup ./fsd >> "$FSD_LOG" 2>&1 &
+        nohup "$FSD_PATH" >> "$FSD_LOG" 2>&1 &
         sleep 2
         print_output "${GREEN}✅ FSD Server gestartet (PID: $(pgrep -f fsd | head -n1))${NC}"
     fi
@@ -98,13 +111,17 @@ show_logs() {
 
 stop_all() {
     print_output "${YELLOW}⏹ Stoppe alle laufenden Prozesse...${NC}"
-    sudo pkill -f "python3" > /dev/null 2>&1
-    sudo pkill -f "app.py" > /dev/null 2>&1
-    sudo pkill -f "./fsd" > /dev/null 2>&1
+
+    # Web: nur app.py aus deinem BASE_DIR
+    pkill -f "$WEB_PATH" > /dev/null 2>&1
+
+    # FSD: nur deine Binary
+    pkill -f "$FSD_PATH" > /dev/null 2>&1
+
     sleep 1
 
-    if pgrep -f "python3" > /dev/null || pgrep -f "./fsd" > /dev/null; then
-        print_output "${RED}❌ Einige Prozesse laufen noch!${NC}\n$(ps ax | grep -E 'python3|fsd' | grep -v grep)"
+    if pgrep -f "$WEB_PATH" > /dev/null || pgrep -f "$FSD_PATH" > /dev/null; then
+        print_output "${RED}❌ Einige Prozesse laufen noch!${NC}\n$(ps ax | grep -E "$(basename "$WEB_PATH")|$(basename "$FSD_PATH")" | grep -v grep)"
     else
         print_output "${GREEN}✅ Alle Prozesse erfolgreich beendet.${NC}"
     fi
@@ -112,6 +129,7 @@ stop_all() {
     echo -e "\nDrücke [ENTER], um zum Menü zurückzukehren..."
     read
 }
+
 
 # ==========================================================
 # Hauptschleife
