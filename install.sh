@@ -27,6 +27,11 @@ sudo apt update -y && sudo apt upgrade -y
 echo -e "${GREEN}📦 Installiere Python & pip...${NC}"
 sudo apt install -y python3 python3-venv python3-pip
 
+echo -e "${GREEN}🧱 Installiere benötigte Systempakete...${NC}"
+sudo apt update -y
+sudo apt install -y build-essential cmake python3 python3-venv python3-pip sqlite3 libsqlite3-dev git nano curl unzip
+
+
 # -------------------------------
 # 2. Virtuelle Umgebung erstellen
 # -------------------------------
@@ -61,6 +66,46 @@ sudo chmod -R 755 "$BASE_DIR"
 sudo chown -R $USER:$USER "$BASE_DIR"
 
 # -------------------------------
+# 5. FSD Kompillieren mit SQL
+# -------------------------------
+
+echo -e "${GREEN}🧩 Kompiliere FSD Server mit SQLite-Unterstützung...${NC}"
+cd "$BASE_DIR"
+if [ ! -d "build" ]; then
+    mkdir build
+fi
+cd build
+cmake ..
+make -j$(nproc)
+echo -e "${GREEN}✅ FSD Server erfolgreich gebaut.${NC}"
+
+# -------------------------------
+# 6. FSD Kompillieren mit SQL
+# -------------------------------
+
+echo -e "${GREEN}🗃️ Erstelle SQLite-Datenbank für Benutzer (cert.sqlitedb3)...${NC}"
+cd "$BASE_DIR/unix"
+if [ ! -f "cert.sqlitedb3" ]; then
+    sqlite3 cert.sqlitedb3 "CREATE TABLE IF NOT EXISTS cert(callsign TEXT PRIMARY KEY NOT NULL, password TEXT NOT NULL, level INT NOT NULL);"
+    echo -e "${GREEN}✅ Datenbank erstellt.${NC}"
+else
+    echo -e "${YELLOW}⚠️ Datenbank existiert bereits – überspringe.${NC}"
+fi
+
+
+# -------------------------------
+# 6. Beerechtigungen prüfen
+# -------------------------------
+
+echo -e "${GREEN}🔑 Setze Dateiberechtigungen...${NC}"
+sudo chmod -R 755 "$BASE_DIR"
+sudo chown -R $USER:$USER "$BASE_DIR"
+
+mkdir -p "$LOG_DIR"
+touch "$LOG_DIR/debug.log" "$LOG_DIR/fsd_output.log"
+
+
+# -------------------------------
 # 5. Logs anlegen
 # -------------------------------
 touch "$LOG_DIR/debug.log"
@@ -88,11 +133,11 @@ fi
 # -------------------------------
 echo -e "\n${GREEN}🎉 Installation abgeschlossen!${NC}"
 echo -e "---------------------------------------------"
-echo -e "📂 Basisverzeichnis: $BASE_DIR"
-echo -e "🌐 Webserver-Datei: $WEB_DIR/app.py"
-echo -e "🧭 Manager-Script:   $BASE_DIR/fsd_manager.sh"
-echo -e "📜 Logs-Verzeichnis: $LOG_DIR"
-echo -e "🐍 Virtuelle Umgebung: $VENV_DIR"
+echo -e "📦 FSD kompiliert mit SQLite-Unterstützung"
+echo -e "🐍 Flask Umgebung installiert"
+echo -e "🗃️  Benutzer-Datenbank: $BASE_DIR/unix/cert.sqlitedb3"
+echo -e "🧭 Manager starten mit:"
+echo -e "👉  sudo bash $BASE_DIR/fsd_manager.sh"
 echo -e "---------------------------------------------"
 echo -e "${YELLOW}Zum Starten:${NC}"
 echo -e "👉  source $VENV_DIR/bin/activate"
