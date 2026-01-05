@@ -7,15 +7,24 @@ import sqlite3
 import json, os, time, threading
 from pathlib import Path
 
-# === Konfiguration ===
-FSD_PATH = "/home/cedric1982/fsd/unix/fsd"
-WHAZZUP_PATH = "/home/cedric1982/fsd/unix/whazzup.txt"
-DB_PATH = "/home/cedric1982/fsd/unix/cert.sqlitedb3"
+# === Konfiguration (relocatable) ===
+from pathlib import Path
 
-app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
+# app.py liegt in <base>/web/app.py  -> BASE_DIR ist <base>
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-STATUS_FILE = Path("/home/cedric1982/fsd/logs/status.json")
+UNIX_DIR = BASE_DIR / "unix"
+LOG_DIR = BASE_DIR / "logs"
+
+FSD_PATH = UNIX_DIR / "fsd"
+WHAZZUP_PATH = UNIX_DIR / "whazzup.txt"
+DB_PATH = UNIX_DIR / "cert.sqlitedb3"
+
+STATUS_FILE = LOG_DIR / "status.json"
+last_mtime = 0
+
+# Sicherstellen, dass Logs-Verzeichnis existiert
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 last_mtime = 0
 
 # -------------------------------------------------------------------
@@ -178,7 +187,7 @@ def api_clients():
 # --- Benutzer anzeigen ---
 @app.route("/users")
 def users():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(str(DB_PATH))
     c = conn.cursor()
     c.execute("CREATE TABLE IF NOT EXISTS cert (callsign TEXT PRIMARY KEY NOT NULL, password TEXT NOT NULL, level INT NOT NULL)")
     c.execute("SELECT * FROM cert")
@@ -193,7 +202,7 @@ def add_user():
     password = request.form["password"].strip()
     level = int(request.form["level"])
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(str(DB_PATH))
     c = conn.cursor()
     c.execute("INSERT OR REPLACE INTO cert (callsign, password, level) VALUES (?, ?, ?)", (callsign, password, level))
     conn.commit()
@@ -203,7 +212,7 @@ def add_user():
 # --- Benutzer löschen ---
 @app.route("/delete_user/<callsign>")
 def delete_user(callsign):
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(str(DB_PATH))
     c = conn.cursor()
     c.execute("DELETE FROM cert WHERE callsign = ?", (callsign,))
     conn.commit()
