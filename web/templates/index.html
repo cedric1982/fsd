@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FSD Server Dashboard</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
         body {
             background-color: #0d1117;
@@ -54,9 +56,11 @@
         }
     </style>
 </head>
+
 <body>
 <div class="container-fluid">
     <div class="row">
+
         <!-- Sidebar -->
         <nav class="col-md-2 d-none d-md-block sidebar">
             <h4 class="text-white mb-4">🧭 FSD Manager</h4>
@@ -66,15 +70,16 @@
 
         <!-- Main content -->
         <main class="col-md-10 ms-sm-auto px-4">
+
             <div class="pt-3 pb-2 mb-3 border-bottom">
                 <h2 class="text-white">FSD Server Dashboard</h2>
             </div>
 
-            <!-- Status Section -->
+            <!-- Status -->
             <div class="row mb-4">
                 <div class="col-md-4">
-                    <div class="card text-center p-3" id="status-card">
-                        <h5>Status:</h5>
+                    <div class="card text-center p-3 status-offline" id="status-card">
+                        <h5>Status</h5>
                         <p class="fs-4" id="status-text">offline</p>
                         <h6>PID: <span id="pid-text">-</span></h6>
                         <h6>Uptime: <span id="uptime-text">-</span></h6>
@@ -83,7 +88,7 @@
                 </div>
             </div>
 
-            <!-- Clients Table -->
+            <!-- Clients -->
             <div class="card p-3 mb-4">
                 <h4>🛫 Aktive Clients</h4>
                 <table class="table mt-3" id="clients-table">
@@ -98,13 +103,15 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="5" class="text-center text-muted">Keine aktiven Clients</td>
+                            <td colspan="5" class="text-center text-muted">
+                                Keine aktiven Clients
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Login Table -->
+            <!-- Logins -->
             <div class="card p-3">
                 <h4>📋 Letzte Loginversuche</h4>
                 <table class="table mt-3" id="logins-table">
@@ -119,84 +126,133 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="5" class="text-center text-muted">Keine Logins vorhanden</td>
+                            <td colspan="5" class="text-center text-muted">
+                                Keine Logins vorhanden
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
         </main>
     </div>
 </div>
 
-<!-- Bootstrap & Socket.IO -->
+<!-- JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
 <script>
 const socket = io();
 
+/* -------------------------------------------------
+   Hilfsfunktion: Uptime formatieren
+------------------------------------------------- */
+function formatUptime(seconds) {
+    seconds = Number(seconds) || 0;
+    const d = Math.floor(seconds / 86400);
+    seconds %= 86400;
+    const h = Math.floor(seconds / 3600);
+    seconds %= 3600;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+
+    const parts = [];
+    if (d > 0) parts.push(`${d}d`);
+    if (h > 0 || d > 0) parts.push(`${h}h`);
+    parts.push(`${m}m`);
+    parts.push(`${s}s`);
+    return parts.join(" ");
+}
+
+/* -------------------------------------------------
+   WebSocket: Verbindung
+------------------------------------------------- */
 socket.on("connect", () => {
-    console.log("✅ Verbunden mit WebSocket-Server");
+    console.log("✅ Verbunden mit WebSocket");
 });
 
-socket.on("status_update", (data) => {
-    console.log("📡 Neue Daten empfangen:", data);
-
-    // --- Status aktualisieren ---
+/* -------------------------------------------------
+   Live-Status (PID + Uptime, jede Sekunde)
+------------------------------------------------- */
+socket.on("fsd_status", (data) => {
     const statusText = document.getElementById("status-text");
     const pidText = document.getElementById("pid-text");
     const uptimeText = document.getElementById("uptime-text");
     const statusCard = document.getElementById("status-card");
 
+    if (!data) return;
+
     statusText.textContent = data.status || "offline";
-    pidText.textContent = data.pid || "-";
-    uptimeText.textContent = data.uptime ? data.uptime + "s" : "-";
+    pidText.textContent =
+        (data.pid !== null && data.pid !== undefined) ? data.pid : "-";
 
     if (data.status === "running") {
+        uptimeText.textContent = formatUptime(data.uptime_sec);
         statusCard.classList.remove("status-offline");
         statusCard.classList.add("status-running");
     } else {
+        uptimeText.textContent = "-";
         statusCard.classList.remove("status-running");
         statusCard.classList.add("status-offline");
     }
+});
 
-    // --- Clients aktualisieren ---
+/* -------------------------------------------------
+   Status-Update aus status.json (Clients, Logins)
+------------------------------------------------- */
+socket.on("status_update", (data) => {
+    if (!data) return;
+
+    /* Clients */
     const clientsTable = document.querySelector("#clients-table tbody");
     clientsTable.innerHTML = "";
 
     if (data.clients && data.clients.length > 0) {
         data.clients.forEach(c => {
-            const row = `<tr>
-                <td>${c.callsign}</td>
-                <td>${c.type}</td>
-                <td>${parseFloat(c.lat).toFixed(6)}</td>
-                <td>${parseFloat(c.lon).toFixed(6)}</td>
-                <td>${c.alt}</td>
-            </tr>`;
-            clientsTable.innerHTML += row;
+            clientsTable.innerHTML += `
+                <tr>
+                    <td>${c.callsign}</td>
+                    <td>${c.type}</td>
+                    <td>${parseFloat(c.lat).toFixed(6)}</td>
+                    <td>${parseFloat(c.lon).toFixed(6)}</td>
+                    <td>${c.alt}</td>
+                </tr>`;
         });
     } else {
-        clientsTable.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Keine aktiven Clients</td></tr>`;
+        clientsTable.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center text-muted">
+                    Keine aktiven Clients
+                </td>
+            </tr>`;
     }
 
-    // --- Logins aktualisieren (optional, wenn später implementiert) ---
+    /* Logins (optional) */
     const loginsTable = document.querySelector("#logins-table tbody");
     loginsTable.innerHTML = "";
+
     if (data.logins && data.logins.length > 0) {
         data.logins.forEach(l => {
-            const row = `<tr>
-                <td>${l.time}</td>
-                <td>${l.callsign}</td>
-                <td>${l.cid}</td>
-                <td>${l.status}</td>
-                <td>${l.message}</td>
-            </tr>`;
-            loginsTable.innerHTML += row;
+            loginsTable.innerHTML += `
+                <tr>
+                    <td>${l.time}</td>
+                    <td>${l.callsign}</td>
+                    <td>${l.cid}</td>
+                    <td>${l.status}</td>
+                    <td>${l.message}</td>
+                </tr>`;
         });
     } else {
-        loginsTable.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Keine Logins vorhanden</td></tr>`;
+        loginsTable.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center text-muted">
+                    Keine Logins vorhanden
+                </td>
+            </tr>`;
     }
 });
 </script>
+
 </body>
 </html>
