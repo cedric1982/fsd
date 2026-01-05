@@ -109,7 +109,6 @@ rm -f "$DB_PATH"
 sqlite3 "$DB_PATH" <<'SQL'
 CREATE TABLE IF NOT EXISTS cert (
     cid TEXT PRIMARY KEY NOT NULL,
-    callsign TEXT NOT NULL,
     password TEXT NOT NULL,
     level INT NOT NULL
 );
