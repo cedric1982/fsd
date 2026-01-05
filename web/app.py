@@ -67,7 +67,7 @@ if __name__ == "__main__":
     watcher_thread = threading.Thread(target=watch_status_file, daemon=True)
     watcher_thread.start()
     print("🚀 Flask-SocketIO Server läuft auf Port 8080")
-    socketio.run(app, host="0.0.0.0", port=8080, debug=False
+    socketio.run(app, host="0.0.0.0", port=8080, debug=False)
 
 
 
