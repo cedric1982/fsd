@@ -76,10 +76,10 @@ void fsd::dochecks()
 {
    time_t now=mtime();
 	//status update
-	if (difftime(now, prevnotify) >= 5)
+	if (difftime(now, prevstatus) >= 5)
 	{
 		writestatus();
-		prevnotify = now;
+		prevstatus = now;
 	}
    if ((now-prevnotify)>NOTIFYCHECK)
    {
