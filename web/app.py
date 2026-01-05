@@ -81,15 +81,28 @@ def handle_connect():
 
 # === FSD-Prozessprüfung ===
 def get_fsd_process():
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+    target = os.path.realpath(str(FSD_PATH))
+
+    for proc in psutil.process_iter(['pid', 'exe', 'cmdline']):
         try:
-            if 'fsd' in proc.info['name'].lower():
+            exe = proc.info.get('exe')
+            cmd = proc.info.get('cmdline')
+
+            # 1) sauberster Fall: exe-Pfad stimmt exakt
+            if exe and os.path.realpath(exe) == target:
                 return proc
-            if proc.info['cmdline'] and any('fsd' in cmd.lower() for cmd in proc.info['cmdline']):
+
+            # 2) Fallback: erstes cmdline-Argument ist das Binary
+            if cmd and len(cmd) > 0 and os.path.realpath(cmd[0]) == target:
                 return proc
+
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
+        except Exception:
+            continue
+
     return None
+
 
 def get_fsd_status_payload():
     proc = get_fsd_process()
@@ -184,24 +197,24 @@ def api_status():
     if proc:
         try:
             pid = proc.pid
-            create_time = proc.create_time()
-            uptime_sec = time.time() - create_time
-            uptime_min = int(uptime_sec // 60)
-            status = "running"
+            uptime_sec = int(time.time() - proc.create_time())
+            return jsonify({
+                "status": "running",
+                "pid": pid,
+                "uptime_sec": uptime_sec
+            })
         except Exception as e:
-            status = f"error: {e}"
-            pid = None
-            uptime_min = 0
+            return jsonify({
+                "status": f"error: {e}",
+                "pid": None,
+                "uptime_sec": 0
+            })
     else:
-        status = "stopped"
-        pid = None
-        uptime_min = 0
-
-    return jsonify({
-        "status": status,
-        "pid": pid,
-        "uptime": f"{uptime_min} min"
-    })
+        return jsonify({
+            "status": "stopped",
+            "pid": None,
+            "uptime_sec": 0
+        })
 
 
 @app.route("/api/clients")
