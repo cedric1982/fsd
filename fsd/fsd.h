@@ -33,6 +33,7 @@ class fsd
    ~fsd();
    void run();
    void writestatus();
+   time_t prevstatus;
 };
 extern clinterface *clientinterface;
 extern servinterface *serverinterface;
