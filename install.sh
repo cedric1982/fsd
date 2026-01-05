@@ -1,79 +1,90 @@
 #!/bin/bash
 # ===============================================================
-#  FSD INSTALLATIONSSCRIPT
-#  Erstellt Umgebung, installiert Abhängigkeiten & richtet alles ein
+#  FSD INSTALLATIONSSCRIPT (automatisch mit Python venv)
 # ===============================================================
 
 BASE_DIR="/home/cedric1982/fsd"
 LOG_DIR="$BASE_DIR/logs"
 WEB_DIR="$BASE_DIR/web"
 UNIX_DIR="$BASE_DIR/unix"
+VENV_DIR="$BASE_DIR/venv"
 
-# Farben
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
 echo -e "${YELLOW}=============================================${NC}"
-echo -e "${YELLOW}🚀 Starte Installation des FSD-Servers...${NC}"
+echo -e "${YELLOW}🚀 Starte FSD-Server Installation...${NC}"
 echo -e "${YELLOW}=============================================${NC}\n"
 
 # -------------------------------
-# System vorbereiten
+# 1. System vorbereiten
 # -------------------------------
-echo -e "${GREEN}🔧 Aktualisiere Paketlisten...${NC}"
+echo -e "${GREEN}🔧 Aktualisiere System...${NC}"
 sudo apt update -y && sudo apt upgrade -y
 
-echo -e "${GREEN}📦 Installiere benötigte Pakete...${NC}"
-sudo apt install -y python3 python3-pip python3-venv git nano curl unzip
+echo -e "${GREEN}📦 Installiere Python & pip...${NC}"
+sudo apt install -y python3 python3-venv python3-pip
 
 # -------------------------------
-# Python-Abhängigkeiten
+# 2. Virtuelle Umgebung erstellen
 # -------------------------------
-echo -e "${GREEN}🐍 Installiere Python-Module...${NC}"
-pip3 install --upgrade pip
-pip3 install flask psutil flask-cors
+echo -e "${GREEN}🐍 Erstelle Python venv unter: $VENV_DIR${NC}"
+sudo rm -rf "$VENV_DIR" 2>/dev/null
+python3 -m venv "$VENV_DIR"
+
+# Prüfen ob erfolgreich:
+if [ ! -d "$VENV_DIR" ]; then
+    echo -e "${RED}❌ Virtuelle Umgebung konnte nicht erstellt werden!${NC}"
+    exit 1
+fi
+
+# Aktivieren
+source "$VENV_DIR/bin/activate"
 
 # -------------------------------
-# Verzeichnisstruktur prüfen
+# 3. Python-Pakete installieren
 # -------------------------------
-echo -e "${GREEN}📁 Erstelle Verzeichnisstruktur...${NC}"
+echo -e "${GREEN}📚 Installiere Flask, psutil & flask-cors...${NC}"
+pip install --upgrade pip
+pip install flask psutil flask-cors
+
+# -------------------------------
+# 4. Verzeichnisse & Berechtigungen
+# -------------------------------
+echo -e "${GREEN}📁 Erstelle benötigte Verzeichnisse...${NC}"
 mkdir -p "$LOG_DIR" "$WEB_DIR" "$UNIX_DIR"
 
-# -------------------------------
-# Zugriffsrechte setzen
-# -------------------------------
 echo -e "${GREEN}🔑 Setze Berechtigungen...${NC}"
 sudo chmod -R 755 "$BASE_DIR"
 sudo chown -R $USER:$USER "$BASE_DIR"
 
 # -------------------------------
-# Skripte prüfen und ausführbar machen
+# 5. Logs anlegen
 # -------------------------------
-if [ -f "$BASE_DIR/fsd_manager.sh" ]; then
-    sudo chmod +x "$BASE_DIR/fsd_manager.sh"
-    echo -e "${GREEN}✅ fsd_manager.sh ist ausführbar.${NC}"
-else
-    echo -e "${RED}⚠️  fsd_manager.sh nicht gefunden! Bitte Datei prüfen.${NC}"
-fi
-
-if [ -f "$WEB_DIR/app.py" ]; then
-    sudo chmod +x "$WEB_DIR/app.py"
-    echo -e "${GREEN}✅ app.py ist ausführbar.${NC}"
-else
-    echo -e "${RED}⚠️  app.py nicht gefunden! Bitte Datei prüfen.${NC}"
-fi
-
-# -------------------------------
-# Logs vorbereiten
-# -------------------------------
-echo -e "${GREEN}🪵 Lege Log-Dateien an...${NC}"
 touch "$LOG_DIR/debug.log"
 touch "$LOG_DIR/fsd_output.log"
 
 # -------------------------------
-# Abschluss
+# 6. Skripte ausführbar machen
+# -------------------------------
+if [ -f "$BASE_DIR/fsd_manager.sh" ]; then
+    chmod +x "$BASE_DIR/fsd_manager.sh"
+    echo -e "${GREEN}✅ fsd_manager.sh ist ausführbar.${NC}"
+else
+    echo -e "${RED}⚠️  fsd_manager.sh nicht gefunden!${NC}"
+fi
+
+if [ -f "$WEB_DIR/app.py" ]; then
+    chmod +x "$WEB_DIR/app.py"
+    echo -e "${GREEN}✅ app.py ist ausführbar.${NC}"
+else
+    echo -e "${RED}⚠️  app.py nicht gefunden!${NC}"
+fi
+
+# -------------------------------
+# 7. Fertig
 # -------------------------------
 echo -e "\n${GREEN}🎉 Installation abgeschlossen!${NC}"
 echo -e "---------------------------------------------"
@@ -81,7 +92,9 @@ echo -e "📂 Basisverzeichnis: $BASE_DIR"
 echo -e "🌐 Webserver-Datei: $WEB_DIR/app.py"
 echo -e "🧭 Manager-Script:   $BASE_DIR/fsd_manager.sh"
 echo -e "📜 Logs-Verzeichnis: $LOG_DIR"
+echo -e "🐍 Virtuelle Umgebung: $VENV_DIR"
 echo -e "---------------------------------------------"
-echo -e "${YELLOW}Zum Starten des Managers:${NC}"
+echo -e "${YELLOW}Zum Starten:${NC}"
+echo -e "👉  source $VENV_DIR/bin/activate"
 echo -e "👉  sudo bash $BASE_DIR/fsd_manager.sh"
 echo -e "---------------------------------------------"
