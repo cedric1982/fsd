@@ -224,14 +224,27 @@ def api_clients():
 
 # --- Benutzer anzeigen ---
 @app.route("/users")
-def users():
-    conn = sqlite3.connect(str(DB_PATH))
-    c = conn.cursor()
-    c.execute("CREATE TABLE IF NOT EXISTS cert (cid TEXT PRIMARY KEY NOT NULL, callsign TEXT PRIMARY KEY NOT NULL, password TEXT NOT NULL, level INT NOT NULL)")
-    c.execute("SELECT * FROM cert")
-    users = c.fetchall()
-    conn.close()
-    return render_template("users.html", users=users)
+    def users():
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("SELECT cid, password, level FROM cert ORDER BY cid ASC")
+        users = c.fetchall()
+
+        # nächste CID berechnen
+        if users:
+            max_cid = max(int(u[0]) for u in users if str(u[0]).isdigit())
+            next_cid = max_cid + 1
+        else:
+            next_cid = 1000001  # Startwert, falls DB leer
+
+        conn.close()
+
+    return render_template(
+        "users.html",
+        users=users,
+        next_cid=next_cid
+    )
+
 
 # --- Benutzer hinzufügen ---
 @app.route("/add_user", methods=["POST"])
