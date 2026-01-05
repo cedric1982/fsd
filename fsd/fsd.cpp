@@ -18,6 +18,7 @@
 #include <json/json.h>
 #include <fstream>
 #include <unistd.h>
+#include <sys/stat.h>
 
 clinterface *clientinterface=NULL;
 servinterface *serverinterface=NULL;
@@ -38,6 +39,17 @@ fsd::fsd(char *configfile)
    configman=new configmanager(configfile);
    pmanager->registerprocess(configman);
 
+   /* Sicherstellen, dass das Logs-Verzeichnis existiert */
+    const char *logDir = "/home/cedric1982/fsd/logs";
+    struct stat st = {0};
+    if (stat(logDir, &st) == -1)
+    {
+        mkdir(logDir, 0755);
+    }
+
+	std::ofstream("/home/cedric1982/fsd/logs/fsd_output.log", std::ios::trunc);
+
+	
    /* Create the METAR manager */
    metarmanager=new mm;
    pmanager->registerprocess(metarmanager);
