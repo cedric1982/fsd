@@ -4,10 +4,13 @@ import psutil
 import time
 import os
 import sqlite3
-import json, os, time, threading
-
-# === Konfiguration (relocatable) ===
+import json
+import threading
 from pathlib import Path
+
+# --------------------------------------------------------
+# KONFIG
+# -------------------------------------------------------
 
 # app.py liegt in <base>/web/app.py  -> BASE_DIR ist <base>
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -18,13 +21,14 @@ LOG_DIR = BASE_DIR / "logs"
 FSD_PATH = UNIX_DIR / "fsd"
 WHAZZUP_PATH = UNIX_DIR / "whazzup.txt"
 DB_PATH = UNIX_DIR / "cert.sqlitedb3"
-
 STATUS_FILE = LOG_DIR / "status.json"
-last_mtime = 0
 
-# Sicherstellen, dass Logs-Verzeichnis existiert
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 last_mtime = 0
+
+
+app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # -------------------------------------------------------------------
 # Dashboard (wird nur einmal geladen – danach WebSocket live updates)
