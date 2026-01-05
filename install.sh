@@ -29,7 +29,7 @@ sudo apt install -y python3 python3-venv python3-pip
 
 echo -e "${GREEN}🧱 Installiere benötigte Systempakete...${NC}"
 sudo apt update -y
-sudo apt install -y build-essential cmake python3 python3-venv python3-pip sqlite3 libsqlite3-dev git nano curl unzip
+sudo apt install -y build-essential cmake python3 python3-venv python3-pip sqlite3 libsqlite3-dev git nano curl unzip libjsoncpp-dev
 
 
 # -------------------------------
