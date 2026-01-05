@@ -1,11 +1,13 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import psutil
 import time
 import os
+import sqlite3
 
 # === Konfiguration ===
 FSD_PATH = "/home/cedric1982/fsd/unix/fsd"
 WHAZZUP_PATH = "/home/cedric1982/fsd/unix/whazzup.txt"
+DB_PATH = "/home/cedric1982/fsd/unix/cert.sqlitedb3"
 
 app = Flask(__name__)
 
@@ -122,6 +124,41 @@ def api_status():
 def api_clients():
     clients = parse_whazzup_clients()
     return jsonify(clients)
+
+# --- Benutzer anzeigen ---
+@app.route("/users")
+def users():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("CREATE TABLE IF NOT EXISTS cert (callsign TEXT PRIMARY KEY NOT NULL, password TEXT NOT NULL, level INT NOT NULL)")
+    c.execute("SELECT * FROM cert")
+    users = c.fetchall()
+    conn.close()
+    return render_template("users.html", users=users)
+
+# --- Benutzer hinzufügen ---
+@app.route("/add_user", methods=["POST"])
+def add_user():
+    callsign = request.form["callsign"].strip().upper()
+    password = request.form["password"].strip()
+    level = int(request.form["level"])
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("INSERT OR REPLACE INTO cert (callsign, password, level) VALUES (?, ?, ?)", (callsign, password, level))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("users"))
+
+# --- Benutzer löschen ---
+@app.route("/delete_user/<callsign>")
+def delete_user(callsign):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("DELETE FROM cert WHERE callsign = ?", (callsign,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("users"))
 
 
 if __name__ == "__main__":
