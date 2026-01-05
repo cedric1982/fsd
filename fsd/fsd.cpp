@@ -6,7 +6,7 @@
 	#include <unistd.h>
 #endif
 #include <sys/stat.h>
-
+#include "client.h"
 #include "fsd.h"
 #include "manage.h"
 #include "support.h"
@@ -18,7 +18,6 @@
 #include <jsoncpp/json/json.h>
 #include <fstream>
 #include <unistd.h>
-#include <sys/stat.h>
 
 clinterface *clientinterface=NULL;
 servinterface *serverinterface=NULL;
@@ -408,7 +407,7 @@ void fsd::writestatus()
 
     // --- Aktive Clients (Beispiel aus clientlist) ---
     Json::Value clients(Json::arrayValue);
-    for (client *c = clientlist; c; c = c->next)
+    for (client *c = rootclient; c; c = c->next)
     {
         Json::Value cl;
         cl["callsign"] = c->callsign ? c->callsign : "";
