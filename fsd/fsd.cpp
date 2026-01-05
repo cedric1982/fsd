@@ -18,11 +18,52 @@
 #include <jsoncpp/json/json.h>
 #include <fstream>
 #include <unistd.h>
+#include <filesystem>
+#include <limits.h>
+#include <stdexcept>
 
 clinterface *clientinterface=NULL;
 servinterface *serverinterface=NULL;
 sysinterface *systeminterface=NULL;
 configmanager *configman=NULL;
+
+
+namespace fs = std::filesystem;
+
+// File-scope: wird einmal im Konstruktor gesetzt und dann z.B. in writestatus() verwendet
+static fs::path g_log_dir;
+
+static fs::path getExecutableDir()
+{
+#ifndef WIN32
+    char buf[PATH_MAX];
+    ssize_t len = ::readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+    if (len <= 0) {
+        throw std::runtime_error("readlink(/proc/self/exe) failed");
+    }
+    buf[len] = '\0';
+    return fs::path(buf).parent_path(); // .../bin
+#else
+    // Falls du später Windows willst, müsste hier eine Windows-Implementierung rein.
+    return fs::current_path();
+#endif
+}
+
+static fs::path getBaseDir()
+{
+    // Annahme Layout: <base>/bin/fsd  -> base = <base>
+    return getExecutableDir().parent_path();
+}
+
+static void ensureDir(const fs::path& p)
+{
+    std::error_code ec;
+    fs::create_directories(p, ec);
+    if (ec) {
+        throw std::runtime_error("create_directories failed for " + p.string() + ": " + ec.message());
+    }
+}
+
 
 
 fsd::fsd(char *configfile)
@@ -38,15 +79,13 @@ fsd::fsd(char *configfile)
    configman=new configmanager(configfile);
    pmanager->registerprocess(configman);
 
-   /* Sicherstellen, dass das Logs-Verzeichnis existiert */
-    const char *logDir = "/home/cedric1982/fsd/logs";
-    struct stat st = {0};
-    if (stat(logDir, &st) == -1)
-    {
-        mkdir(logDir, 0755);
-    }
+   // Logs relativ zum Installationsort ermitteln und sicherstellen, dass das Verzeichnis existiert
+	fs::path baseDir = getBaseDir();        // z.B. /opt/fsd
+	g_log_dir = baseDir / "logs";           // z.B. /opt/fsd/logs
+	ensureDir(g_log_dir);
 
-	std::ofstream("/home/cedric1982/fsd/logs/fsd_output.log", std::ios::trunc);
+	// Datei initial leeren/anlegen
+	std::ofstream((g_log_dir / "fsd_output.log").string(), std::ios::trunc);
 
 	
    /* Create the METAR manager */
@@ -421,7 +460,7 @@ void fsd::writestatus()
     root["clients"] = clients;
 
     // --- Datei schreiben ---
-    std::ofstream file("/home/cedric1982/fsd/logs/status.json");
+	std::ofstream file((g_log_dir / "status.json").string());
     if (file.is_open())
     {
         file << root.toStyledString();
