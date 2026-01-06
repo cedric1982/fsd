@@ -69,7 +69,7 @@ source "$VENV_DIR/bin/activate"
 # -------------------------------
 echo -e "${GREEN}📚 Installiere Flask, psutil & flask-cors...${NC}"
 pip install --upgrade pip
-pip install flask psutil flask-cors flask-socketio eventlet
+pip install flask psutil flask-cors flask-socketio eventlet werkzeug
 
 # -------------------------------
 # 5. FSD kompilieren (CMake)
