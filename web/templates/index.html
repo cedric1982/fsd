@@ -623,14 +623,26 @@
     });
 
       socket.on("live_clients", (payload) => {
-      if (!payload || !Array.isArray(payload.clients)) return;
+  if (!payload || !Array.isArray(payload.clients)) return;
 
-      liveMode = true;                 // NEU
-      lastClients = payload.clients;
+  // 1) Leere Live-Updates nicht verwenden, wenn wir schon etwas anzeigen
+  if (payload.clients.length === 0 && Array.isArray(lastClients) && lastClients.length > 0) {
+    return;
+  }
 
-      renderClients(lastClients);
-      document.getElementById("kpi-clients").textContent = String(payload.clients.length);
-    });
+  // 2) Live-Modus erst aktivieren, wenn wirklich Live-Daten da sind
+  if (payload.clients.length > 0) {
+    liveMode = true;
+  }
+
+  // 3) Nur überschreiben, wenn es Sinn ergibt
+  if (payload.clients.length > 0 || !lastClients || lastClients.length === 0) {
+    lastClients = payload.clients;
+    renderClients(lastClients);
+    document.getElementById("kpi-clients").textContent = String(lastClients.length);
+  }
+});
+
 
   </script>
 
