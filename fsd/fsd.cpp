@@ -27,12 +27,10 @@
 #include <chrono>
 
 
-
 clinterface *clientinterface=NULL;
 servinterface *serverinterface=NULL;
 sysinterface *systeminterface=NULL;
 configmanager *configman=NULL;
-
 
 namespace fs = std::filesystem;
 
@@ -58,17 +56,17 @@ try {
     decl = declination_deg(c->lat, c->lon, alt_m);
     wmm_ok = declination_is_plausible(decl);
 } catch (...) {
-    wmm_ok = false;
+    wmm_ok = false; // Wenn Missweisung fehlschlägt, auf false setzen
 }
 
 j["wmm_ok"] = wmm_ok;
 if (wmm_ok) {
-    j["decl_deg"] = decl;
+    j["decl_deg"] = decl;  // Missweisung ausgeben
     // true = magnetic + decl (east-positive)
-    j["hdg_true"] = wrap360(hdg_sim + decl);
+    j["hdg_true"] = wrap360(hdg_sim + decl);  // True Heading nur, wenn WMM valide
 } else {
-    j["decl_deg"] = Json::nullValue;
-    j["hdg_true"] = Json::nullValue;
+    j["decl_deg"] = Json::nullValue;  // Wenn WMM fehlschlägt, null setzen
+    j["hdg_true"] = Json::nullValue;  // True Heading nur bei validem WMM
 }
 
 
@@ -447,242 +445,3 @@ void fsd::configmyserver()
          servermail=entry->getdata();
       if ((entry=sysgroup->getentry("hostname"))!=NULL)
          serverhostname=entry->getdata();
-      if ((entry=sysgroup->getentry("location"))!=NULL)
-         serverlocation=entry->getdata();
-      if ((entry=sysgroup->getentry("mode"))!=NULL)
-         if (!STRCASECMP(entry->getdata(),"silent")) mode=SERVER_SILENT;
-   }
-   char identbuf[100], mailbuf[1]="", hnamebuf[100], locationbuf[1]="";
-   if (!serverident)
-   {
-      serverident=identbuf;
-#ifdef WIN32
-	      sprintf(serverident, "%d", GetCurrentProcessId());
-#else
-	      sprintf(serverident, "%d", getpid());
-#endif
-      dolog(L_ERR, "No serverident specified");
-   }
-   if (!servermail)
-   {
-      servermail=mailbuf;
-      dolog(L_ERR,"No server mail address specified");
-   }
-   if (!serverhostname)
-   {
-      gethostname(hnamebuf, 100);
-      serverhostname=hnamebuf;
-      dolog(L_ERR,"No server host name specified");
-   }
-   if (!servername)
-   {
-      dolog(L_ERR,"No servername specified");
-      servername=serverhostname;
-   }
-   if (!serverlocation)
-   {
-      dolog(L_ERR,"No serverlocation specified");
-      serverlocation=locationbuf;
-   }
-   int flags=mode;
-   if (metarmanager->source!=SOURCE_NETWORK) flags|=SERVER_METAR;
-   if (myserver) myserver->configure(servername, servermail, serverhostname,
-       VERSION, serverlocation); else
-   myserver=new server(serverident, servername, servermail, serverhostname,
-      VERSION, flags, serverlocation);
-}
-void fsd::configure()
-{
-   clientport=6809, serverport=3011, systemport=3012;
-   configentry *entry;
-   configgroup *sysgroup=configman->getgroup("system");
-   /* Configure */
-   if (sysgroup)
-   {
-      if ((entry=sysgroup->getentry("clientport"))!=NULL)
-         clientport=entry->getint();
-      if ((entry=sysgroup->getentry("serverport"))!=NULL)
-         serverport=entry->getint();
-      if ((entry=sysgroup->getentry("systemport"))!=NULL)
-         systemport=entry->getint();
-      if ((entry=sysgroup->getentry("certificates"))!=NULL)
-         certfile=strdup(entry->getdata());
-      if ((entry=sysgroup->getentry("whazzup"))!=NULL)
-			 whazzupfile=strdup(entry->getdata());
-   }
-   configmyserver();
-   initdb();
-   readcert();
-}
-int fsd::handlecidline(void *data, int argc, char **argv, char **azColName)
-{
-   if (strcmp(azColName[0], "cid")||strcmp(azColName[1], "password")||strcmp(azColName[2], "level"))
-   {
-      dolog(L_ERR, "Invaild cert database format");
-      return 1;
-   }
-   char *cid=argv[0], *pwd=argv[1];
-   int level=atoi(argv[2]);
-{
-   certificate *tempcert;
-   int mode;
-   tempcert=getcert(cid);
-   if (!tempcert)
-   {
-      tempcert=new certificate(cid, pwd, level, mgmtime(), myserver->ident);
-      mode=CERT_ADD;
-   } else {
-      tempcert->livecheck=1;
-      if (strcmp(tempcert->password, pwd)||level==tempcert->level)
-         return 0;
-      tempcert->configure(pwd, level, mgmtime(), myserver->ident);
-      mode=CERT_MODIFY;
-   }
-   if (serverinterface) serverinterface->sendcert("*", mode, tempcert, NULL);
-	return 0;
-}
-}
-void fsd::initdb()
-{
-   if (!certfile) return;
-   int rc;
-   rc = sqlite3_open(certfile, &certdb);
-   if (rc) {
-      dolog(L_ERR, "Can't open database: %s", sqlite3_errmsg(certdb));
-      sqlite3_close(certdb);
-      return;
-   }
-   char *zErrMsg = 0;
-   rc = sqlite3_exec(certdb, "CREATE TABLE cert(cid TEXT PRIMARY KEY NOT NULL, password TEXT NOT NULL, level INT NOT NULL);", (int (*)(void *, int, char**, char**))NULL, 0, &zErrMsg);
-   if( rc != SQLITE_OK ){
-      sqlite3_free(zErrMsg);
-   }
-}
-void fsd::readcert()
-{
-   char *zErrMsg = 0;
-   certificate *temp;
-   for (temp=rootcert;temp;temp=temp->next)
-      temp->livecheck=0;
-   dolog(L_INFO, "Reading certificates from '%s'", certfile);
-   int rc = sqlite3_exec(certdb, "SELECT * FROM cert", handlecidline, (void*)NULL, &zErrMsg);
-   if (rc != SQLITE_OK) {
-      dolog(L_ERR, "SQL error: %s", zErrMsg);
-      sqlite3_free(zErrMsg);
-   }
-   temp=rootcert;
-   while (temp)
-   {
-      certificate *next=temp->next;
-	   if (!temp->livecheck)
-      {
-        serverinterface->sendcert("*", CERT_DELETE, temp, NULL);
-		delete temp;
-      }
-	   temp=next;
-   }
-}
-void fsd::writestatus()
-{
-    Json::Value root;
-
-    // --- Allgemeine Server-Infos ---
-    root["status"] = "running";
-    root["pid"] = (int)getpid();
-    root["uptime"] = (int)(time(NULL) - timer);
-
-    // --- Aktive Clients (Beispiel aus clientlist) ---
-    Json::Value clients(Json::arrayValue);
-    for (client *c = rootclient; c; c = c->next)
-    {
-        Json::Value cl;
-        cl["callsign"] = c->callsign ? c->callsign : "";
-        cl["type"] = (c->type == CLIENT_PILOT) ? "PILOT" : "ATC";
-        cl["lat"] = c->lat;
-        cl["lon"] = c->lon;
-        cl["alt"] = c->altitude;
-        clients.append(cl);
-    }
-
-    root["clients"] = clients;
-
-    // --- Datei schreiben ---
-	std::ofstream file((g_log_dir / "status.json").string());
-    if (file.is_open())
-    {
-        file << root.toStyledString();
-        file.close();
-    }
-}
-void fsd::createmanagevars()
-{
-   int varnum;
-   varnum=manager->addvar("system.boottime",ATT_DATE);
-   manager->setvar(varnum, time(NULL));
-   varnum=manager->addvar("version.system",ATT_VARCHAR);
-   manager->setvar(varnum, VERSION);
-}
-void fsd::createinterfaces()
-{
-   char prompt[100];
-   sprintf(prompt,"%s> ",myserver->ident);
-   clientinterface=new clinterface(clientport, "client", "client interface");
-   serverinterface=new servinterface(serverport, "server", "server interface");
-   systeminterface=new sysinterface(systemport, "system","system management interface");
-   systeminterface->setprompt(prompt);
-   
-   serverinterface->setfeedstrategy(FEED_BOTH);
-
-   /* Clients may send a maximum of 100000 bytes/second */
-   clientinterface->setflood(100000);
-   clientinterface->setfeedstrategy(FEED_IN);
-
-   /* Clients may have a buffer of 100000 bytes */
-   clientinterface->setoutbuflimit(100000);
-
-   pmanager->registerprocess(clientinterface);
-   pmanager->registerprocess(serverinterface);
-   pmanager->registerprocess(systeminterface);
-}
-void fsd::makeconnections()
-{
-   configgroup *cgroup=configman->getgroup("connections");
-   if (!cgroup) return;
-   configentry *centry=cgroup->getentry("connectto");
-   if (centry)
-   {
-      /* Connect to the configured servers */
-      int x, nparts=centry->getnparts();
-      for (x=0;x<nparts;x++)
-      {
-		 int portnum=3011;
-		 char *data=centry->getpart(x), *sportnum;
-		 sportnum=strchr(data,':');
-		 if (sportnum)
-		 {
-			int num;
-			if (sscanf(sportnum+1,"%d",&num)==1) portnum=num;
-			*sportnum='\0';
-		 }
-		 if (serverinterface->adduser(data,portnum,NULL)!=1)
-			dolog(L_ERR,"Connection to %s port %d failed!",data,portnum);
-	    else dolog(L_INFO,"Connected to %s port %d",data,portnum);
-      }
-   }
-
-
-   centry=cgroup->getentry("allowfrom");
-   if (centry)
-   {
-      /* Allow the configured servers */
-      int nparts=centry->getnparts(), x;
-      for (x=0;x<nparts;x++)
-         serverinterface->allow(centry->getpart(x));
-   } else dolog(L_WARNING,
-      "No 'allowfrom' found, allowing everybody on the server port");
-
-   serverinterface->sendreset();
-}
-
-
-
