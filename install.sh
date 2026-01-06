@@ -41,7 +41,7 @@ sudo apt install -y \
   build-essential cmake sqlite3 libsqlite3-dev \
   python3 python3-venv python3-pip \
   git nano curl unzip libjsoncpp-dev \
-  libgeographiclib-dev
+  libgeographiclib-dev geographiclib-tools geographiclib-doc
 
 # -------------------------------
 # 2. Verzeichnisse anlegen
