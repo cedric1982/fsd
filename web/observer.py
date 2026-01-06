@@ -14,7 +14,7 @@ FSD_PORT = int(os.environ.get("FSD_PORT", "6809"))
 PUSH_URL = os.environ.get("FSD_PUSH_URL", "http://127.0.0.1:8080/api/live_update")
 
 # Shared Secret, damit nicht jeder im LAN deine Live-API spammen kann
-PUSH_TOKEN = os.environ.get("FSD_PUSH_TOKEN", "CHANGE_ME")
+PUSH_TOKEN = os.environ.get("FSD_PUSH_TOKEN", "my-super-secret-token")
 
 # Sende-Intervall (Sekunden)
 PUSH_INTERVAL = float(os.environ.get("FSD_PUSH_INTERVAL", "1.0"))
