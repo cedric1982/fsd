@@ -618,6 +618,16 @@
         renderLogins(lastLogins);
       }
     });
+
+      socket.on("live_clients", (payload) => {
+    if (!payload || !Array.isArray(payload.clients)) return;
+
+      lastClients = payload.clients;
+      renderClients(lastClients);
+
+      document.getElementById("kpi-clients").textContent =
+      String(payload.clients.length);
+    });
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
