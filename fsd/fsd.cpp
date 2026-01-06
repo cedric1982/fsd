@@ -320,7 +320,23 @@ try {
 
         // PBH + dekodiertes Heading
         j["pbh"]      = (Json::UInt64)c->pbh;
-        j["hdg_deg"]  = heading_from_pbh((uint32_t)c->pbh);
+        const double hdg_tru = heading_from_pbh((uint32_t)c->pbh);
+		j["hdg_tru"] = hdg_tru;
+
+		double decl = 0.0;
+		try {
+   		 // altitude in Metern (wenn du nur feet hast: feet * 0.3048)
+    		// Wenn du keine zuverlässige Höhe hast, ist 0.0 m ok.
+    		decl = declination_deg(c->lat, c->lon, 0.0);
+		} catch (...) {
+    		decl = 0.0; // Fallback: keine Korrektur
+		}
+
+		const double hdg_mag = wrap360(hdg_tru - decl);
+
+		j["decl_deg"] = decl;      // fürs Debuggen extrem hilfreich
+		j["hdg_mag"]  = hdg_mag;   // sollte eher zur Simulator-Anzeige passen
+
 
         clients.append(j);
     }
