@@ -274,6 +274,22 @@ def api_clients():
     clients = parse_whazzup_clients()
     return jsonify(clients)
 
+
+LIVE_PUSH_TOKEN = os.environ.get("FSD_PUSH_TOKEN", "CHANGE_ME")
+
+@app.route("/api/live_update", methods=["POST"])
+def api_live_update():
+    token = request.headers.get("X-FSD-Token", "")
+    if token != LIVE_PUSH_TOKEN:
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
+
+    data = request.get_json(silent=True) or {}
+    socketio.emit("live_clients", data)
+    return jsonify({"ok": True})
+
+
+
+
 # --- Benutzer anzeigen ---
 @app.route("/users")
 @require_admin
