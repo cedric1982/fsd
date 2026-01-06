@@ -69,20 +69,17 @@ static inline double current_decimal_year()
     return year + (yday / 365.25);
 }
 
+
 static double declination_deg(double lat, double lon, double alt_m)
 {
-    // Modell einmal laden (lazy static)
-    // Je nach Ubuntu-Version kann "wmm2020" oder "wmm2025" verfügbar sein.
-    // Wenn "wmm2020" bei dir nicht lädt, ersetze es durch "wmm2025".
-    static GeographicLib::MagneticModel model("wmm2025");
-
+    static GeographicLib::MagneticModel model("wmm2020"); // falls nötig: wmm2025
     const double t = current_decimal_year();
 
-    double Bx, By, Bz; // NED-Komponenten
-    model.Field(t, lat, lon, alt_m, Bx, By, Bz);
+    double Bx, By, Bz;
+    model(t, lat, lon, alt_m, Bx, By, Bz);
 
-    // Declination = atan2(East, North) in Grad
-    return std::atan2(By, Bx) * 180.0 / M_PI;
+    const double pi = std::acos(-1.0);
+    return std::atan2(By, Bx) * 180.0 / pi;
 }
 
 
