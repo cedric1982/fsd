@@ -245,6 +245,40 @@
       margin: 4px 0;
     }
 
+
+    /* Lesbarkeit für Tabellen-Inhalte erzwingen */
+.table-darkish th,
+.table-darkish td{
+  color: rgba(255,255,255,.92) !important;
+}
+
+/* Header etwas kräftiger */
+.table-darkish thead th{
+  color: rgba(255,255,255,.96) !important;
+  font-weight: 700;
+  border-color: var(--border) !important;
+}
+
+/* Body-Text nicht "ausgewaschen" */
+.table-darkish tbody td{
+  border-color: var(--border) !important;
+}
+
+/* Zahlen-Spalten: tabellarische Ziffern + monospace (deutlich besser bei Koordinaten) */
+.table-darkish tbody td:nth-child(3),
+.table-darkish tbody td:nth-child(4),
+.table-darkish tbody td:nth-child(5){
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Optional: Latitude/Longitude rechtsbündig (ruhigeres Layout) */
+.table-darkish tbody td:nth-child(3),
+.table-darkish tbody td:nth-child(4){
+  text-align: right;
+}
+
+    
     /* Responsive */
     @media (max-width: 992px){
       .app-shell{ grid-template-columns: 1fr; }
