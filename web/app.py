@@ -158,15 +158,53 @@ def get_fsd_process():
 
 def get_fsd_status_payload():
     proc = get_fsd_process()
+
+    # Systemwerte (Host)
+    try:
+        cpu_pct = psutil.cpu_percent(interval=None)  # non-blocking; "letztes Intervall"
+        vm = psutil.virtual_memory()
+        ram_pct = vm.percent
+        ram_used_mb = int(vm.used / (1024 * 1024))
+        ram_total_mb = int(vm.total / (1024 * 1024))
+    except Exception:
+        cpu_pct = None
+        ram_pct = None
+        ram_used_mb = None
+        ram_total_mb = None
+
     if not proc:
-        return {"status": "stopped", "pid": None, "uptime_sec": 0}
+        return {
+            "status": "stopped",
+            "pid": None,
+            "uptime_sec": 0,
+            "cpu_percent": cpu_pct,
+            "ram_percent": ram_pct,
+            "ram_used_mb": ram_used_mb,
+            "ram_total_mb": ram_total_mb,
+        }
 
     try:
         pid = proc.pid
         uptime_sec = int(time.time() - proc.create_time())
-        return {"status": "running", "pid": pid, "uptime_sec": uptime_sec}
+        return {
+            "status": "running",
+            "pid": pid,
+            "uptime_sec": uptime_sec,
+            "cpu_percent": cpu_pct,
+            "ram_percent": ram_pct,
+            "ram_used_mb": ram_used_mb,
+            "ram_total_mb": ram_total_mb,
+        }
     except Exception as e:
-        return {"status": f"error: {e}", "pid": None, "uptime_sec": 0}
+        return {
+            "status": f"error: {e}",
+            "pid": None,
+            "uptime_sec": 0,
+            "cpu_percent": cpu_pct,
+            "ram_percent": ram_pct,
+            "ram_used_mb": ram_used_mb,
+            "ram_total_mb": ram_total_mb,
+        }
 
 
 def status_broadcaster():
