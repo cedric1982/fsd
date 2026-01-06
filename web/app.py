@@ -233,7 +233,7 @@ def users():
             cid TEXT PRIMARY KEY NOT NULL,
             password TEXT NOT NULL,
             level INT NOT NULL,
-            twitch_name TEXT,
+            twitch_name TEXT
         )
     """)
 
@@ -258,7 +258,7 @@ def users():
 def add_user():
     cid = request.form.get("cid", "").strip()
     password = request.form.get("password", "").strip()
-    level = request.form.get("level", "1").strip()
+    levelraw = request.form.get("level", "1").strip()
     twitch_name = request.form.get("twitch_name", "").strip()
 
     if not cid or not password:
@@ -272,7 +272,7 @@ def add_user():
     conn = sqlite3.connect(str(DB_PATH))
     c = conn.cursor()
     c.execute(
-        "INSERT OR REPLACE INTO cert (cid, password, level, twitch_name) VALUES (?, ?, ?)",
+        "INSERT OR REPLACE INTO cert (cid, password, level, twitch_name) VALUES (?, ?, ?, ?)",
         (cid, password, level, twitch_name)
     )
     conn.commit()
