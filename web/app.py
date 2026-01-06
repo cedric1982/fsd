@@ -275,7 +275,7 @@ def api_clients():
     return jsonify(clients)
 
 
-LIVE_PUSH_TOKEN = os.environ.get("FSD_PUSH_TOKEN", "CHANGE_ME")
+LIVE_PUSH_TOKEN = os.environ.get("FSD_PUSH_TOKEN", "my-super-secret-token")
 
 @app.route("/api/live_update", methods=["POST"])
 def api_live_update():
