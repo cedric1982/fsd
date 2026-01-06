@@ -501,8 +501,8 @@
     let lastLogins = [];
     let lastFsdStatusAt = "-";
     let lastStatusJsonAt = "-";
-
-    let liveMode = false;   // sobald true: Clients kommen nur noch über live_clients
+    let liveMode = false;
+    let lastLiveAt = 0;
 
     // Filter
     const filterInput = document.getElementById("client-filter");
@@ -611,9 +611,13 @@
       if (!data) return;
 
       // Clients NUR aus status.json nehmen, wenn wir NICHT live sind
-      if (!liveMode && Array.isArray(data.clients)){
+      const liveTooOld ? (Date.now() - lastLiveAt) > 10000;
+      
+      if (!liveMode || liveTooOld){
+        if (Array.isArrey(data.clients)) {
         lastClients = data.clients;
         renderClients(lastClients);
+        }
       }
 
       if (Array.isArray(data.logins)){
@@ -625,7 +629,9 @@
       socket.on("live_clients", (payload) => {
       if (!payload || !Array.isArray(payload.clients)) return;
 
-      liveMode = true;                 // NEU
+      liveMode = true;
+      lastLiveAt = Date.now();
+        
       lastClients = payload.clients;
 
       renderClients(lastClients);
