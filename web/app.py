@@ -1,6 +1,8 @@
 import eventlet
 eventlet.monkey_patch()
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+from functools import wraps
+from werkzeug.security import check_password_hash
 from flask_socketio import SocketIO, emit
 import psutil
 import time
@@ -30,6 +32,33 @@ last_mtime = 0
 
 
 app = Flask(__name__)
+# Session benötigt secret_key (bitte nicht leer lassen)
+app.secret_key = os.environ.get("FSD_WEB_SECRET", "fgsdhfdstj56u5h4h3nrgh4h")
+
+AUTH_FILE = BASE_DIR / "web" / "admin_auth.json"
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=True,  # funktioniert bei HTTPS (Nginx)
+)
+
+def load_admin_hash():
+    try:
+        with open(AUTH_FILE, "r", encoding="utf-8") as f:
+            return json.load(f).get("admin_password_hash")
+    except Exception:
+        return None
+
+def require_admin(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not session.get("is_admin"):
+            return render_template("auth_gate.html", next=request.path), 401
+        return view(*args, **kwargs)
+    return wrapped
+
+
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # -------------------------------------------------------------------
@@ -38,6 +67,29 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+
+@app.route("/auth", methods=["POST"])
+def auth():
+    data = request.get_json(silent=True) or {}
+    pw = (data.get("password") or "").strip()
+    next_url = (data.get("next") or "/users").strip()
+
+    stored_hash = load_admin_hash()
+    if not stored_hash:
+        return jsonify({"ok": False, "error": "Admin-Passwort nicht konfiguriert"}), 500
+
+    if not check_password_hash(stored_hash, pw):
+        return jsonify({"ok": False, "error": "Falsches Passwort"}), 401
+
+    session["is_admin"] = True
+    return jsonify({"ok": True, "next": next_url})
+
+@app.route("/logout")
+def logout():
+    session.pop("is_admin", None)
+    return redirect(url_for("index"))
 
 
 # -------------------------------------------------------------------
@@ -224,6 +276,7 @@ def api_clients():
 
 # --- Benutzer anzeigen ---
 @app.route("/users")
+@require_admin
 def users():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -255,6 +308,7 @@ def users():
 
 # --- Benutzer hinzufügen ---
 @app.route("/add_user", methods=["POST"])
+@require_admin
 def add_user():
     cid = request.form.get("cid", "").strip()
     password = request.form.get("password", "").strip()
@@ -283,6 +337,7 @@ def add_user():
 
 # --- Benutzer löschen ---
 @app.route("/delete_user/<cid>")
+@require_admin
 def delete_user(cid):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
