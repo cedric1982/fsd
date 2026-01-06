@@ -222,11 +222,7 @@ void fsd::dochecks()
                      sprintf(dataseg6,"%d:%c:%d:%d:%d:%d:%d:%d:%s:%s:%s", tempflightplan->revision, tempflightplan->type, tempflightplan->deptime, tempflightplan->actdeptime, tempflightplan->hrsenroute, tempflightplan->minenroute, tempflightplan->hrsfuel, tempflightplan->minfuel, tempflightplan->altairport, tempflightplan->remarks, tempflightplan->route);
                   else
                      sprintf(dataseg6,"%s","::::::::::");
-                  if (tempclient->computed_hdg >= 0)
-   					 sprintf(dataseg7, "::::::%s:HDG=%d", sprintgmt(tempclient->starttime, s), tempclient->computed_hdg);
-				else
-   					 sprintf(dataseg7, "::::::%s:HDG=", sprintgmt(tempclient->starttime, s));
-
+                  sprintf(dataseg7,"::::::%s", sprintgmt(tempclient->starttime,s));
                   fprintf(wzfile,"%s:%s:%s:%s:%s:%s:%s\n", dataseg1, dataseg2, dataseg3, dataseg4, dataseg5, dataseg6, dataseg7);
                }
                char dataline[150]; 
