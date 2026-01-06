@@ -156,7 +156,41 @@ sudo chown -R "$USER:$USER" "$BASE_DIR"
 sudo chmod -R 755 "$BASE_DIR"
 
 # -------------------------------
-# 10. Fertig
+# 10. Admin Passwort für Oberläche
+# -------------------------------
+
+echo -e "\n${YELLOW}🔐 Admin-Passwort für Benutzerverwaltung setzen${NC}"
+read -s -p "Admin-Passwort: " ADMIN_PW
+echo
+read -s -p "Admin-Passwort wiederholen: " ADMIN_PW2
+echo
+
+if [ "$ADMIN_PW" != "$ADMIN_PW2" ]; then
+  echo -e "${RED}❌ Passwörter stimmen nicht überein.${NC}"
+  exit 1
+fi
+
+AUTH_FILE="$BASE_DIR/web/admin_auth.json"
+
+# Hash erzeugen via Python (Werkzeug)
+python3 - <<PY
+import json
+from werkzeug.security import generate_password_hash
+pw = """$ADMIN_PW"""
+data = {"admin_password_hash": generate_password_hash(pw)}
+with open("$AUTH_FILE","w") as f:
+    json.dump(data, f)
+print("✅ Admin-Hash geschrieben nach: $AUTH_FILE")
+PY
+
+# Rechte hart setzen
+chmod 600 "$AUTH_FILE"
+chown $USER:$USER "$AUTH_FILE"
+
+
+
+# -------------------------------
+# 11. Fertig
 # -------------------------------
 echo -e "\n${GREEN}🎉 Installation abgeschlossen!${NC}"
 echo -e "---------------------------------------------"
