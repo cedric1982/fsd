@@ -228,14 +228,20 @@ def users():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
-    c.execute("SELECT cid, password, level FROM cert ORDER BY cid ASC")
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS cert (
+            cid TEXT PRIMARY KEY NOT NULL,
+            password TEXT NOT NULL,
+            level INT NOT NULL
+        )
+    """)
+
+    c.execute("SELECT cid, password, level FROM cert ORDER BY CAST(cid AS INTEGER)")
     users = c.fetchall()
 
-    if users:
-        max_cid = max(int(u[0]) for u in users if str(u[0]).isdigit())
-        next_cid = max_cid + 1
-    else:
-        next_cid = 1000001
+    c.execute("SELECT MAX(CAST(cid AS INTEGER)) FROM cert")
+    max_cid = c.fetchone()[0]
+    next_cid = (max_cid or 0) + 1
 
     conn.close()
 
@@ -244,7 +250,6 @@ def users():
         users=users,
         next_cid=next_cid
     )
-
 
 
 # --- Benutzer hinzufügen ---
