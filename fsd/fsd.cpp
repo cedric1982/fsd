@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
+#include <cstdint>
 #ifndef WIN32
 	#include <unistd.h>
 #endif
@@ -21,6 +22,11 @@
 #include <filesystem>
 #include <limits.h>
 #include <stdexcept>
+#include <GeographicLib/MagneticModel.hpp>
+#include <cmath>
+#include <chrono>
+
+
 
 clinterface *clientinterface=NULL;
 servinterface *serverinterface=NULL;
@@ -39,6 +45,44 @@ static inline double heading_from_pbh(uint32_t pbh)
     const uint32_t hdg_raw = (pbh >> 2) & 0x3FF;
     const double heading_multiplier = 1024.0 / 360.0;
     return hdg_raw / heading_multiplier; // 0..360
+}
+
+static inline double wrap360(double x)
+{
+    while (x < 0.0) x += 360.0;
+    while (x >= 360.0) x -= 360.0;
+    return x;
+}
+
+
+static inline double current_decimal_year()
+{
+    using namespace std::chrono;
+    const auto now = system_clock::now();
+    std::time_t t = system_clock::to_time_t(now);
+    std::tm gmt{};
+    gmtime_r(&t, &gmt);
+
+    // grob-gut: Dezimaljahr aus (Year + DayOfYear/365.25)
+    const int year = gmt.tm_year + 1900;
+    const int yday = gmt.tm_yday; // 0..365
+    return year + (yday / 365.25);
+}
+
+static double declination_deg(double lat, double lon, double alt_m)
+{
+    // Modell einmal laden (lazy static)
+    // Je nach Ubuntu-Version kann "wmm2020" oder "wmm2025" verfügbar sein.
+    // Wenn "wmm2020" bei dir nicht lädt, ersetze es durch "wmm2025".
+    static GeographicLib::MagneticModel model("wmm2025");
+
+    const double t = current_decimal_year();
+
+    double Bx, By, Bz; // NED-Komponenten
+    model.Field(t, lat, lon, alt_m, Bx, By, Bz);
+
+    // Declination = atan2(East, North) in Grad
+    return std::atan2(By, Bx) * 180.0 / M_PI;
 }
 
 
