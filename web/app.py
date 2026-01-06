@@ -265,7 +265,7 @@ def add_user():
         return "Missing cid or password", 400
 
     try:
-        level = int(level_raw)
+        level = int(levelraw)
     except ValueError:
         return "Invalid level", 400
 
