@@ -296,6 +296,7 @@
                   <thead>
                     <tr>
                       <th>CID</th>
+                      <th>Twitch</th>th>
                       <th>Passwort</th>
                       <th class="text-end">Level</th>
                       <th class="text-end">Aktion</th>
@@ -306,15 +307,19 @@
                       {% for u in users %}
                       <tr data-cid="{{ u[0] }}">
                         <td><span class="badge-soft">{{ u[0] }}</span></td>
+                        <td style="color: var(--muted);">
+                          {{ u[3] if u[3] else "-" }}
+                        </td>
                         <td style="color: var(--muted);">{{ u[1] }}</td>
                         <td class="text-end">{{ u[2] }}</td>
                         <td class="text-end">
-                          <a href="/delete_user/{{ u[0] }}" class="btn btn-danger-soft"
-                             onclick="return confirm('Benutzer mit CID {{ u[0] }} wirklich löschen?');">
-                            Löschen
-                          </a>
-                        </td>
-                      </tr>
+                         <a href="/delete_user/{{ u[0] }}"
+                           class="btn btn-danger-soft"
+                           onclick="return confirm('Benutzer wirklich löschen?');">
+                           Löschen
+                        </a>
+                      </td>
+                    </tr>>
                       {% endfor %}
                     {% else %}
                       <tr>
@@ -349,6 +354,13 @@
                          required
                      readonly>
 
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Twitch-Name</label>
+                        <input type="text"
+                           class="form-control"
+                           name="twitch_name"
+                           placeholder="z.B. Windsackair">
                   </div>
 
                   <div class="col-12">
