@@ -109,17 +109,17 @@ class LiveObserver:
 
     def push_loop(self):
         while True:
-        now = time.time()
-        if (now - self.last_push) >= PUSH_INTERVAL:
-            payload = {"clients": self.snapshot(), "ts": int(now)}
-            try:
-                http_post_json(PUSH_URL, PUSH_TOKEN, payload)
-            except Exception as e:
-                print(f"[observer] push failed: {e}")
+            now = time.time()
+            if (now - self.last_push) >= PUSH_INTERVAL:
+                payload = {"clients": self.snapshot(), "ts": int(now)}
+                try:
+                    http_post_json(PUSH_URL, PUSH_TOKEN, payload)
+                except Exception as e:
+                    print(f"[observer] push failed: {e}")
 
-            self.last_push = now
+                self.last_push = now
 
-        time.sleep(0.05)
+            time.sleep(0.05)
 
 
     def run(self):
