@@ -110,14 +110,15 @@ sqlite3 "$DB_PATH" <<'SQL'
 CREATE TABLE IF NOT EXISTS cert (
     cid TEXT PRIMARY KEY NOT NULL,
     password TEXT NOT NULL,
-    level INT NOT NULL
+    level INT NOT NULL,
+    twitch_name TEXT
 );
 
-INSERT OR REPLACE INTO cert (cid, password, level)
-VALUES ('1000001', 'admin123', 5);
+INSERT OR REPLACE INTO cert (cid, password, level, twitch_name)
+VALUES ('1000001', 'admin123', 5, 'AdminTwitch');
 
-INSERT OR REPLACE INTO cert (cid, password, level)
-VALUES ('1000002', 'test123', 1);
+INSERT OR REPLACE INTO cert (cid, password, level, twitch_name)
+VALUES ('1000002', 'test123', 1, 'TestTwitch');
 SQL
 
 chmod 644 "$DB_PATH"
