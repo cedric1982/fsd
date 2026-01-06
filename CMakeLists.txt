@@ -48,13 +48,19 @@ add_executable(fsd
         fsd/wprofile.cpp
         fsd/wprofile.h)
 
+
 find_package(SQLite3 REQUIRED)
-find_package(GeographicLib REQUIRED)
+
 
 # Jsoncpp hinzufügen
 include_directories(/usr/include/jsoncpp)
 target_link_libraries(fsd sqlite3 jsoncpp)
-target_link_libraries(fsd PRIVATE GeographicLib::GeographicLib)
+
+# Geographic hinzufugen
+target_link_libraries(fsd
+    PRIVATE
+        GeographicLib
+)
 
 
 
