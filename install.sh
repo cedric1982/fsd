@@ -42,13 +42,13 @@ sudo apt install -y \
   python3 python3-venv python3-pip \
   git nano curl unzip libjsoncpp-dev \
   libgeographiclib-dev geographiclib-tools geographiclib-doc
-echo "[install] installing WMM2025 magnetic model ..."
+echo "[install] installing WMM2020 magnetic model ..."
 
 # nur installieren, wenn noch nicht vorhanden
-if [ ! -f /usr/share/GeographicLib/magnetic/wmm2025.wmm ]; then
-    sudo geographiclib-get-magnetic wmm2025
+if [ ! -f /usr/share/GeographicLib/magnetic/wmm2020.wmm ]; then
+    sudo geographiclib-get-magnetic wmm2020
 else
-    echo "[install] wmm2025 already installed, skipping"
+    echo "[install] wmm2020 already installed, skipping"
 fi
 
 echo "[install] done."
