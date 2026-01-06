@@ -70,21 +70,21 @@ def index():
 
 
 
-@app.route("/auth", methods=["POST"])
-def auth():
-    data = request.get_json(silent=True) or {}
-    pw = (data.get("password") or "").strip()
-    next_url = (data.get("next") or "/users").strip()
+## @app.route("/auth", methods=["POST"])
+## def auth():
+##    data = request.get_json(silent=True) or {}
+##    pw = (data.get("password") or "").strip()
+##    next_url = (data.get("next") or "/users").strip()
 
-    stored_hash = load_admin_hash()
-    if not stored_hash:
-        return jsonify({"ok": False, "error": "Admin-Passwort nicht konfiguriert"}), 500
+##    stored_hash = load_admin_hash()
+##    if not stored_hash:
+##        return jsonify({"ok": False, "error": "Admin-Passwort nicht konfiguriert"}), 500
 
-    if not check_password_hash(stored_hash, pw):
-        return jsonify({"ok": False, "error": "Falsches Passwort"}), 401
+##    if not check_password_hash(stored_hash, pw):
+##        return jsonify({"ok": False, "error": "Falsches Passwort"}), 401
 
-    session["is_admin"] = True
-    return jsonify({"ok": True, "next": next_url})
+##    session["is_admin"] = True
+##    return jsonify({"ok": True, "next": next_url})
 
 @app.route("/logout")
 def logout():
@@ -330,7 +330,7 @@ def api_live_update():
 
 # --- Benutzer anzeigen ---
 @app.route("/users")
-@require_admin
+# @require_admin
 def users():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -362,7 +362,7 @@ def users():
 
 # --- Benutzer hinzufügen ---
 @app.route("/add_user", methods=["POST"])
-@require_admin
+# @require_admin
 def add_user():
     cid = request.form.get("cid", "").strip()
     password = request.form.get("password", "").strip()
@@ -391,7 +391,7 @@ def add_user():
 
 # --- Benutzer löschen ---
 @app.route("/delete_user/<cid>")
-@require_admin
+# @require_admin
 def delete_user(cid):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
