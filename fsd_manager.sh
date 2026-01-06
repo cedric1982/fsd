@@ -8,6 +8,7 @@
 SCRIPT_PATH="$(readlink -f "$0")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
+
 # Wenn fsd_manager.sh im Projektroot liegt, ist BASE_DIR = SCRIPT_DIR
 BASE_DIR="$SCRIPT_DIR"
 
@@ -21,7 +22,11 @@ LOG_DIR="$BASE_DIR/logs"
 DEBUG_LOG="$LOG_DIR/debug.log"
 FSD_LOG="$LOG_DIR/fsd_output.log"
 VENV_ACTIVATE="$BASE_DIR/venv/bin/activate"
+OBSERVER_PATH="$BASE_DIR/web/observer.py"
+OBSERVER_LOG="$LOG_DIR/observer.log"
 
+# Shared Token für Flask <-> Observer
+export FSD_PUSH_TOKEN="my-super-secret-token"
 
 # Farben
 GREEN='\033[0;32m'
@@ -31,7 +36,7 @@ NC='\033[0m'
 
 # Logs-Verzeichnis sicherstellen
 mkdir -p "$LOG_DIR"
-touch "$DEBUG_LOG" "$FSD_LOG"
+touch "$DEBUG_LOG" "$FSD_LOG" "$OBSERVER_LOG"
 
 # Position, ab der Ausgaben erscheinen
 OUTPUT_LINE=11
@@ -103,10 +108,23 @@ start_fsd_server() {
     fi
 }
 
+start_observer() {
+    print_output "${GREEN}📡 Starte Live-Observer (FSD Positions)...${NC}"
+    if is_running "observer.py"; then
+        print_output "${YELLOW}⚠️ Observer läuft bereits.${NC}"
+    else
+        source "$VENV_ACTIVATE"
+        nohup python "$OBSERVER_PATH" >> "$OBSERVER_LOG" 2>&1 &
+        sleep 1
+        print_output "${GREEN}✅ Observer gestartet (PID: $(pgrep -f observer.py | head -n1))${NC}"
+    fi
+}
+
+
 show_logs() {
     clear
     echo -e "${YELLOW}📜 Log-Viewer (STRG + C zum Beenden)...${NC}"
-    tail -f "$DEBUG_LOG" "$FSD_LOG"
+    tail -f "$DEBUG_LOG" "$FSD_LOG" "$OBSERVER_LOG"
 }
 
 stop_all() {
@@ -117,6 +135,9 @@ stop_all() {
 
     # FSD: nur deine Binary
     pkill -f "$FSD_PATH" > /dev/null 2>&1
+
+    # Observer
+    pkill -f "$OBSERVER_PATH" > /dev/null 2>&1
 
     sleep 1
 
@@ -143,6 +164,7 @@ while true; do
         1)
             start_webserver
             start_fsd_server
+            start_observer
             ;;
         2)
             show_logs
