@@ -39,13 +39,38 @@ namespace fs = std::filesystem;
 // File-scope: wird einmal im Konstruktor gesetzt und dann z.B. in writestatus() verwendet
 static fs::path g_log_dir;
 
-static inline double heading_from_pbh(uint32_t pbh)
-{
-    // Heading steckt in bits 2..11 (10-bit unsigned)
-    const uint32_t hdg_raw = (pbh >> 2) & 0x3FF;
-    const double heading_multiplier = 1024.0 / 360.0;
-    return hdg_raw / heading_multiplier; // 0..360
+// --- Heading ("wie im Simulator") ---
+// Simulator/Kompass arbeitet praktisch immer magnetisch.
+// Daher: hdg_sim = dekodiertes PBH-Heading – ohne zusätzliche WMM-Korrektur.
+j["pbh"] = (Json::UInt64)c->pbh;
+const double hdg_sim = heading_from_pbh((uint32_t)c->pbh);
+j["hdg_sim"] = hdg_sim;
+
+// Track (Kurs über Grund) aus Positionsänderung – hilfreich zum Debuggen
+if (c->computed_hdg >= 0)
+    j["track_deg"] = c->computed_hdg;
+
+// --- WMM / Missweisung (nur Diagnose & optional True) ---
+double decl = 0.0;
+bool wmm_ok = false;
+try {
+    const double alt_m = (double)c->altitude * 0.3048;
+    decl = declination_deg(c->lat, c->lon, alt_m);
+    wmm_ok = declination_is_plausible(decl);
+} catch (...) {
+    wmm_ok = false;
 }
+
+j["wmm_ok"] = wmm_ok;
+if (wmm_ok) {
+    j["decl_deg"] = decl;
+    // true = magnetic + decl (east-positive)
+    j["hdg_true"] = wrap360(hdg_sim + decl);
+} else {
+    j["decl_deg"] = Json::nullValue;
+    j["hdg_true"] = Json::nullValue;
+}
+
 
 static inline double wrap360(double x)
 {
