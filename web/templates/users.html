@@ -72,6 +72,30 @@
       border: 1px solid var(--border);
     }
 
+.logout-wrap{
+  position: absolute;
+  bottom: 18px;
+  left: 16px;
+  right: 16px;
+}
+
+.btn-logout{
+  width: 100%;
+  background: rgba(215,58,73,.14);
+  border: 1px solid rgba(215,58,73,.35);
+  color: #ffeef0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+.btn-logout:hover{
+  background: rgba(215,58,73,.25);
+  color: #fff;
+}
+
+    
     .side-meta{
       margin-top: 18px;
       padding-top: 14px;
@@ -258,6 +282,14 @@
         <div><span class="text-white">Hinweis:</span> CID ist der Primärschlüssel.</div>
         <div>Passwörter werden aktuell angezeigt (kann man als nächstes maskieren/hashten).</div>
       </div>
+      <div class="logout-wrap">
+  <a href="/logout"
+     class="btn btn-logout"
+     onclick="return confirm('Möchtest du dich wirklich abmelden?');">
+    LOGOUT
+  </a>
+</div>
+
     </aside>
 
     <!-- Main -->
