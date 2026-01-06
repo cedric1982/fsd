@@ -52,15 +52,11 @@ add_executable(fsd
 find_package(SQLite3 REQUIRED)
 
 
-# Jsoncpp hinzufügen
+# Jsoncpp und Geographic hinzufügen
 include_directories(/usr/include/jsoncpp)
-target_link_libraries(fsd sqlite3 jsoncpp)
+target_link_libraries(fsd sqlite3 jsoncpp GeographicLib)
 
-# Geographic hinzufugen
-target_link_libraries(fsd
-    PRIVATE
-        GeographicLib
-)
+
 
 
 
