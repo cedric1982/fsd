@@ -33,6 +33,16 @@ namespace fs = std::filesystem;
 // File-scope: wird einmal im Konstruktor gesetzt und dann z.B. in writestatus() verwendet
 static fs::path g_log_dir;
 
+static inline double heading_from_pbh(uint32_t pbh)
+{
+    // Heading steckt in bits 2..11 (10-bit unsigned)
+    const uint32_t hdg_raw = (pbh >> 2) & 0x3FF;
+    const double heading_multiplier = 1024.0 / 360.0;
+    return hdg_raw / heading_multiplier; // 0..360
+}
+
+
+
 static fs::path getExecutableDir()
 {
 #ifndef WIN32
@@ -236,6 +246,65 @@ void fsd::dochecks()
                fclose(wzfile);
 			   remove(whazzupfile);
                rename(whazzuptemp, whazzupfile);
+				// --- Pilot Snapshot JSON (im selben Ordner wie whazzup.txt) ---
+try {
+    fs::path wzPath(whazzupfile);
+    fs::path outDir = wzPath.parent_path();
+
+    fs::path jsonPath    = outDir / "pilot_snapshot.json";
+    fs::path tmpJsonPath = outDir / "pilot_snapshot.json.tmp";
+
+    Json::Value root;
+    root["ts"] = (Json::Int64)time(NULL);
+
+    Json::Value clients(Json::arrayValue);
+
+    for (client *c = rootclient; c; c = c->next) {
+        // nur Piloten
+        if (c->type != CLIENT_PILOT) continue;
+
+        // nur plausible Positionsdaten (analog zu whazzup-Logik)
+        if (c->lat == 0.0 || c->lon == 0.0) continue;
+        if (c->altitude >= 100000) continue;
+
+        Json::Value j;
+        j["callsign"] = c->callsign ? c->callsign : "";
+        j["lat"]      = c->lat;
+        j["lon"]      = c->lon;
+        j["alt"]      = c->altitude;
+        j["gs"]       = c->groundspeed;
+
+        // PBH + dekodiertes Heading
+        j["pbh"]      = (Json::UInt64)c->pbh;
+        j["hdg_deg"]  = heading_from_pbh((uint32_t)c->pbh);
+
+        clients.append(j);
+    }
+
+    root["clients"] = clients;
+
+    // atomisch schreiben (tmp + rename), wie whazzup
+    {
+        std::ofstream jf(tmpJsonPath.string(), std::ios::trunc);
+        Json::StreamWriterBuilder builder;
+        builder["indentation"] = ""; // kompakt (eine Zeile)
+        std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
+        writer->write(root, &jf);
+        jf << "\n";
+    }
+
+    // rename ist atomar, wenn im gleichen FS/Dir
+    std::error_code ec;
+    fs::remove(jsonPath, ec); // optional (verhindert rename-Probleme bei manchen Setups)
+    fs::rename(tmpJsonPath, jsonPath, ec);
+    if (ec) {
+        // Fallback
+        std::rename(tmpJsonPath.string().c_str(), jsonPath.string().c_str());
+    }
+} catch (...) {
+    // Snapshot darf den Serverbetrieb nicht stören
+}
+
                fileopen=0;
             }
             else
