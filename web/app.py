@@ -281,14 +281,13 @@ def add_user():
 
 # --- Benutzer löschen ---
 @app.route("/delete_user/<cid>")
-def delete_user(callsign):
-    conn = sqlite3.connect(str(DB_PATH))
+def delete_user(cid):
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("DELETE FROM cert WHERE cid = ?", (callsign,))
+    c.execute("DELETE FROM cert WHERE cid = ?", (cid,))
     conn.commit()
     conn.close()
     return redirect(url_for("users"))
-
 
 # -------------------------------------------------------------------
 # Start des Servers + Hintergrund-Thread
