@@ -232,11 +232,12 @@ def users():
         CREATE TABLE IF NOT EXISTS cert (
             cid TEXT PRIMARY KEY NOT NULL,
             password TEXT NOT NULL,
-            level INT NOT NULL
+            level INT NOT NULL,
+            twitch_name TEXT,
         )
     """)
 
-    c.execute("SELECT cid, password, level FROM cert ORDER BY CAST(cid AS INTEGER)")
+    c.execute("SELECT cid, password, level, twitch_name FROM cert ORDER BY CAST(cid AS INTEGER)")
     users = c.fetchall()
 
     c.execute("SELECT MAX(CAST(cid AS INTEGER)) FROM cert")
@@ -257,7 +258,8 @@ def users():
 def add_user():
     cid = request.form.get("cid", "").strip()
     password = request.form.get("password", "").strip()
-    level_raw = request.form.get("level", "1").strip()
+    level = request.form.get("level", "1").strip()
+    twitch_name = request.form.get("twitch_name", "").strip()
 
     if not cid or not password:
         return "Missing cid or password", 400
@@ -270,8 +272,8 @@ def add_user():
     conn = sqlite3.connect(str(DB_PATH))
     c = conn.cursor()
     c.execute(
-        "INSERT OR REPLACE INTO cert (cid, password, level) VALUES (?, ?, ?)",
-        (cid, password, level)
+        "INSERT OR REPLACE INTO cert (cid, password, level, twitch_name) VALUES (?, ?, ?)",
+        (cid, password, level, twitch_name)
     )
     conn.commit()
     conn.close()
