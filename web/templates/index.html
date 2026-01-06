@@ -498,6 +498,7 @@
 
     // State
     let lastClients = [];
+    let liveModeSeen = false;   // sobald true: Clients kommen nur noch über live_clients
     let lastLogins = [];
     let lastFsdStatusAt = "-";
     let lastStatusJsonAt = "-";
@@ -608,7 +609,7 @@
 
       if (!data) return;
 
-      if (Array.isArray(data.clients)){
+      if (Array.isArray(data.clients) && !liveModeSeen) {
         lastClients = data.clients;
         renderClients(lastClients);
       }
@@ -620,13 +621,14 @@
     });
 
       socket.on("live_clients", (payload) => {
-    if (!payload || !Array.isArray(payload.clients)) return;
+        liveModeSeen = true;
+        if (!payload || !Array.isArray(payload.clients)) return;
 
-      lastClients = payload.clients;
-      renderClients(lastClients);
+        lastClients = payload.clients;
+        renderClients(lastClients);
 
-      document.getElementById("kpi-clients").textContent =
-      String(payload.clients.length);
+        document.getElementById("kpi-clients").textContent =
+        String(payload.clients.length);
     });
   </script>
 
