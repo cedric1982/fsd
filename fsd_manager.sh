@@ -27,6 +27,9 @@ OBSERVER_LOG="$LOG_DIR/observer.log"
 
 # Shared Token für Flask <-> Observer
 export FSD_PUSH_TOKEN="my-super-secret-token"
+export FSD_PUSH_URL="http://127.0.0.1:8080/api/live_update"
+export FSD_HOST="127.0.0.1"
+export FSD_PORT="6809"
 
 # Farben
 GREEN='\033[0;32m'
