@@ -108,7 +108,7 @@ class LiveObserver:
             return list(self.clients.values())
 
     def push_loop(self):
-    while True:
+        while True:
         now = time.time()
         if (now - self.last_push) >= PUSH_INTERVAL:
             payload = {"clients": self.snapshot(), "ts": int(now)}
