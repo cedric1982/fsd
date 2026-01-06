@@ -108,16 +108,22 @@ class LiveObserver:
             return list(self.clients.values())
 
     def push_loop(self):
-        while True:
-            now = time.time()
-            if (now - self.last_push) >= PUSH_INTERVAL:
-                payload = {"clients": self.snapshot(), "ts": int(now)}
-                try:
-                    http_post_json(PUSH_URL, PUSH_TOKEN, payload)
-                except Exception as e:
+    while True:
+        now = time.time()
+        if (now - self.last_push) >= PUSH_INTERVAL:
+            payload = {"clients": self.snapshot(), "ts": int(now)}
+            try:
+                http_post_json(PUSH_URL, PUSH_TOKEN, payload)
+            except Exception as e:
+                # Beim Debuggen extrem hilfreich (später kann man es wieder leiser machen)
                 print(f"[observer] push failed: {e}")
-                self.last_push = now
-            time.sleep(0.05)
+
+            # last_push immer setzen, egal ob ok oder Fehler,
+            # sonst versucht er bei Fehlern dauernd neu (spammt)
+            self.last_push = now
+
+        time.sleep(0.05)
+
 
     def run(self):
         # Push-Thread starten
