@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Authentifizierung</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body style="background:#0d1117;color:#c9d1d9;">
+
+<div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background:#111822;border:1px solid rgba(255,255,255,.10);">
+      <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,.10);">
+        <h5 class="modal-title">Benutzerverwaltung geschützt</h5>
+      </div>
+      <div class="modal-body">
+        <p style="color:#8b949e;margin-bottom:10px;">Bitte Admin-Passwort eingeben.</p>
+        <input id="pw" type="password" class="form-control" placeholder="Passwort"
+               style="background:#0f1620;border:1px solid rgba(255,255,255,.10);color:#fff;">
+        <div id="err" class="text-danger small mt-2" style="display:none;"></div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,.10);">
+        <a href="/" class="btn btn-outline-light">Abbrechen</a>
+        <button id="btn" class="btn btn-success">Freischalten</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const nextUrl = "{{ next|e }}";
+  const modal = new bootstrap.Modal(document.getElementById("authModal"), {
+    backdrop: "static",
+    keyboard: false
+  });
+  modal.show();
+
+  async function submit() {
+    const pw = document.getElementById("pw").value;
+    const err = document.getElementById("err");
+    err.style.display = "none";
+
+    const res = await fetch("/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw, next: nextUrl })
+    });
+
+    if (!res.ok) {
+      err.textContent = "Falsches Passwort.";
+      err.style.display = "block";
+      return;
+    }
+
+    const data = await res.json();
+    window.location.href = data.next || "/users";
+  }
+
+  document.getElementById("btn").addEventListener("click", submit);
+  document.getElementById("pw").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submit();
+  });
+</script>
+</body>
+</html>
