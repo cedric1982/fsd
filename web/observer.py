@@ -117,7 +117,7 @@ def parse_position_line(line: str):
         "vs": vs,
 
         # PBH decodieren
-        decoded = unpack_pbh(pbh_raw)
+        decoded = unpack_pbh(pbh_raw):
 
         return {
             "callsign": callsign,
