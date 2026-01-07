@@ -31,6 +31,8 @@ export FSD_PUSH_TOKEN="my-super-secret-token"
 export FSD_PUSH_URL="http://127.0.0.1:8080/api/live_update"
 export FSD_HOST="127.0.0.1"
 export FSD_PORT="6809"
+export FSD_LOGIN_LINE="X:OBSERVER:7000000:SERVER:0:0"
+
 
 # Farben
 GREEN='\033[0;32m'
