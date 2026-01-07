@@ -316,16 +316,16 @@ def api_clients():
 LIVE_PUSH_TOKEN = os.environ.get("FSD_PUSH_TOKEN", "my-super-secret-token")
 
 @app.route("/api/live_update", methods=["POST"])
-def api_live_update():
-    token = request.headers.get("X-FSD-Token", "")
-    if token != LIVE_PUSH_TOKEN:
-        return jsonify({"ok": False, "error": "unauthorized"}), 401
+def live_update():
+    data = request.get_json(force=True, silent=True) or {}
 
-    data = request.get_json(silent=True) or {}
+    print("live_update keys:", list(data.keys()))
+    if "clients" in data and data["clients"]:
+        print("sample client:", data["clients"][0])
+
     socketio.emit("live_clients", data)
-    return jsonify({"ok": True})
-print("live_update keys:", list(data.keys()))
-print("live_update clients sample:", (data.get("clients") or [])[:1])
+    return {"ok": True}
+
 
 
 
