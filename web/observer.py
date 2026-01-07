@@ -104,11 +104,11 @@ def parse_position_line(line: str):
         return None
 
    # PBH decodirern
-    decode = unpack_bph(pbh_raw)
+    decoded = unpack_pbh(pbh_raw)
 
     return {
         "callsign": callsign,
-        "squak": squak,
+        "squawk": squawk,
         "type": ctype,
         "lat": lat,
         "lon": lon,
