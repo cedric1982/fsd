@@ -6,6 +6,7 @@ import socket
 import threading
 import urllib.request
 import urllib.error
+import math
 
 FSD_HOST = os.environ.get("FSD_HOST", "127.0.0.1")
 FSD_PORT = int(os.environ.get("FSD_PORT", "6809"))
@@ -23,10 +24,56 @@ PUSH_INTERVAL = float(os.environ.get("FSD_PUSH_INTERVAL", "1.0"))
 # Beispiel (falls nötig): "X:OBSERVER:7000000:SERVER:0:0\r\n"
 LOGIN_LINE = os.environ.get("FSD_LOGIN_LINE", "").strip()
 
+
+# -------------------------------------------------------------------
+# PBH Decoder
+# Swift-kompatibel: swift::core::fsd::unpackPBH semantics
+# -------------------------------------------------------------------
+PITCH_MULT = 256.0 / 90.0
+BANK_MULT  = 512.0 / 180.0
+HDG_MULT   = 1024.0 / 360.0
+
+def sign_extend_10bit(x: int) -> int:
+    """Convert 10-bit two's complement integer to Python int."""
+    x &= 0x3FF
+    return x - 0x400 if (x & 0x200) else x
+
+def unpack_pbh(pbh_u32: int) -> dict:
+    """
+    Decode Swift PBH uint32 into (pitch_deg, bank_deg, heading_deg, on_ground)
+    following swift::core::fsd::unpackPBH semantics.
+    """
+    pbh = pbh_u32 & 0xFFFFFFFF
+
+    unused    = (pbh >> 0) & 0x1
+    onground  = (pbh >> 1) & 0x1
+    hdg_raw   = (pbh >> 2) & 0x3FF
+    bank_raw  = sign_extend_10bit((pbh >> 12) & 0x3FF)
+    pitch_raw = sign_extend_10bit((pbh >> 22) & 0x3FF)
+
+    # Swift uses qFloor on the division results for pitch/bank
+    pitch_deg = math.floor(pitch_raw / -PITCH_MULT)
+    bank_deg  = math.floor(bank_raw  / -BANK_MULT)
+    heading_deg = hdg_raw / HDG_MULT  # == hdg_raw * 360 / 1024
+
+    return {
+        "pbh_u32": pbh,
+        "unused": unused,
+        "on_ground": bool(onground),
+        "hdg_raw": hdg_raw,
+        "bank_raw": bank_raw,
+        "pitch_raw": pitch_raw,
+        "heading_deg": heading_deg,
+        "heading_deg_rounded": int(round(heading_deg)) % 360,
+        "pitch_deg": pitch_deg,
+        "bank_deg": bank_deg,
+    }
+
+
 def parse_position_line(line: str):
     """
     Erwartetes Format (aus deinem tcpdump ableitbar):
-      @CALLSIGN:CID:TYPE:LAT:LON:ALT:GS:HDG:VS
+      @CALLSIGN:SQUAWK:TYPE:LAT:LON:ALT:GS:PBH
 
     Wir sind robust: falls irgendwo im Text ein '@' vorkommt, schneiden wir davor ab.
     """
@@ -43,7 +90,7 @@ def parse_position_line(line: str):
         return None
 
     callsign = parts[0].strip()
-    cid = parts[1].strip()
+    squak = parts[1].strip()
     ctype = parts[2].strip()
 
     try:
@@ -51,30 +98,32 @@ def parse_position_line(line: str):
         lon = float(parts[4])
         alt = int(float(parts[5]))
         gs = int(float(parts[6]))
-        hdg_raw = int(float(parts[7]))
+        pbh_raw = int(float(parts[7]))
         vs = int(float(parts[8]))
     except ValueError:
         return None
 
-    # In FSD sieht heading oft skaliert aus (bei dir z.B. 405169860)
-    # Daher zusätzlich eine "best guess" Umrechnung:
-    hdg_deg = None
-    if hdg_raw > 360:
-        hdg_deg = round(hdg_raw / 1_000_000.0, 2)
-    else:
-        hdg_deg = float(hdg_raw)
+   # PBH decodirern
+    decode = unpack_bph(pbh_raw)
 
     return {
         "callsign": callsign,
-        "cid": cid,
+        "squak": squak,
         "type": ctype,
         "lat": lat,
         "lon": lon,
         "alt": alt,
         "gs": gs,
-        "hdg_raw": hdg_raw,
-        "hdg_deg": hdg_deg,
         "vs": vs,
+
+        # decodirern
+        "pbh_u32": decoded["pbh_u32"],
+        "hdg_deg": round(decoded["heading_deg"], 2),
+        "hdg_deg_round": decoded["heading_deg_rounded"],
+        "pitch_deg": decoded["pitch_deg"],
+        "bank_deg": decoded["bank_deg"],
+        "on_ground": decoded["on_ground"],
+
         "ts": int(time.time())
     }
 
