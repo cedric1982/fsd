@@ -187,9 +187,10 @@ class LiveObserver:
 
                 if LOGIN_LINE:
                     sock.sendall((LOGIN_LINE + "\r\n").encode("utf-8", errors="ignore"))
-                        print(f"[observer] sent login: {LOGIN_LINE}")
-                    else:
+                    print(f"[observer] sent login: {LOGIN_LINE}")
+                else:
                     print("[observer] WARNING: FSD_LOGIN_LINE is empty -> no login sent")
+
 
                 print("[observer] connected.")
                 backoff = 1
