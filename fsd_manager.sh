@@ -5,6 +5,8 @@
 # ----------------------------------------------------------
 # BASE_DIR automatisch aus dem Speicherort dieses Scripts
 # ----------------------------------------------------------
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
 SCRIPT_PATH="$(readlink -f "$0")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
