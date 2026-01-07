@@ -234,7 +234,7 @@ class LiveObserver:
             try:
                 print(f"[observer] connecting to {FSD_HOST}:{FSD_PORT} ...")
                 sock = socket.create_connection((FSD_HOST, FSD_PORT), timeout=8)
-                sock.settimeout(SOCK_TIMEOUT_SEC)
+                sock.settimeout(None)
 
                 self._send_login(sock)
                 print("[observer] tcp connected, waiting for server feed...")
@@ -242,6 +242,10 @@ class LiveObserver:
                 buf = b""
                 while True:
                     chunk = sock.recv(4096)
+                except socket.timeout:
+                        # Kein Traffic ist normal -> Verbindung behalten
+                    continue
+                    
                     if not chunk:
                         raise ConnectionError("socket closed by server")
 
