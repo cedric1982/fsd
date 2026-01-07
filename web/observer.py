@@ -234,24 +234,24 @@ class LiveObserver:
             try:
                 print(f"[observer] connecting to {FSD_HOST}:{FSD_PORT} ...")
                 sock = socket.create_connection((FSD_HOST, FSD_PORT), timeout=8)
+
+                # dauerhaft verbunden bleiben: recv blockiert unbegrenzt
                 sock.settimeout(None)
 
                 self._send_login(sock)
                 print("[observer] tcp connected, waiting for server feed...")
 
+                # nach erfolgreichem Connect Backoff zurücksetzen
+                backoff = 1
+
                 buf = b""
                 while True:
                     chunk = sock.recv(4096)
-                except socket.timeout:
-                        # Kein Traffic ist normal -> Verbindung behalten
-                    continue
-                    
                     if not chunk:
                         raise ConnectionError("socket closed by server")
 
                     log_rx_chunk(chunk)
 
-                    # robustes Zeilenhandling
                     buf += chunk
                     buf = buf.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
 
@@ -267,11 +267,6 @@ class LiveObserver:
                             obj = parse_position_line(s)
                             if obj:
                                 self.update_client(obj)
-
-            except socket.timeout:
-                print(f"[observer] disconnected: RX timeout after {SOCK_TIMEOUT_SEC}s. retry in {backoff}s")
-                time.sleep(backoff)
-                backoff = min(backoff * 2, 30)
 
             except Exception as e:
                 print(f"[observer] disconnected: {e}. retry in {backoff}s")
