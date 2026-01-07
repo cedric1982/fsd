@@ -31,7 +31,8 @@ export FSD_PUSH_TOKEN="my-super-secret-token"
 export FSD_PUSH_URL="http://127.0.0.1:8080/api/live_update"
 export FSD_HOST="127.0.0.1"
 export FSD_PORT="6809"
-export FSD_LOGIN_LINE="N:OBSERVER:7000000:SERVER:0:0"
+export FSD_LOGIN_LINE='N:OBS1:7000000:Observer:SERVER:1'
+
 
 
 # Farben
@@ -122,6 +123,7 @@ start_observer() {
     else
         source "$VENV_ACTIVATE"
         echo "[fsd_manager] $(date -Is) starting observer" >> "$OBSERVER_LOG"
+        echo "[fsd_manager] FSD_LOGIN_LINE=${FSD_LOGIN_LINE:-<empty>}" >> "$OBSERVER_LOG"
         nohup python -u "$OBSERVER_PATH" >> "$OBSERVER_LOG" 2>&1 &
         sleep 1
         print_output "${GREEN}✅ Observer gestartet (PID: $(pgrep -f observer.py | head -n1))${NC}"
