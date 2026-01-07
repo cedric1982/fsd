@@ -19,7 +19,8 @@ BASE_DIR="$SCRIPT_DIR"
 FSD_PATH="$BASE_DIR/unix/fsd"
 WEB_PATH="$BASE_DIR/web/app.py"
 LOG_DIR="$BASE_DIR/logs"
-DEBUG_LOG="$LOG_DIR/debug.log"
+WEB_LOG="$LOG_DIR/web_app.log"
+OBSERVER_LOG="$LOG_DIR/observer.log"
 FSD_LOG="$LOG_DIR/fsd_output.log"
 VENV_ACTIVATE="$BASE_DIR/venv/bin/activate"
 OBSERVER_PATH="$BASE_DIR/web/observer.py"
@@ -39,7 +40,7 @@ NC='\033[0m'
 
 # Logs-Verzeichnis sicherstellen
 mkdir -p "$LOG_DIR"
-touch "$DEBUG_LOG" "$FSD_LOG" "$OBSERVER_LOG"
+touch "$WEB_LOG" "$FSD_LOG" "$OBSERVER_LOG"
 
 # Position, ab der Ausgaben erscheinen
 OUTPUT_LINE=11
@@ -88,12 +89,13 @@ draw_menu() {
 
 start_webserver() {
     print_output "${GREEN}🚀 Starte Flask Webserver (mit virtueller Umgebung)...${NC}"
-    if is_running "app.py"; then
+    if is_running "$WEB_PATH"; then
         print_output "${YELLOW}⚠️ Flask-Webserver läuft bereits.${NC}"
     else
         cd "$BASE_DIR/web" || exit
         source "$VENV_ACTIVATE"
-        nohup python "$WEB_PATH" >> "$DEBUG_LOG" 2>&1 &
+        echo "[fsd_manager] $(date -Is) starting web app" >> "$WEB_LOG"
+        nohup python -u "$WEB_PATH" >> "$WEB_LOG" 2>&1 &
         sleep 2
         print_output "${GREEN}✅ Flask-Webserver gestartet (PID: $(pgrep -f app.py))${NC}"
     fi
@@ -113,11 +115,12 @@ start_fsd_server() {
 
 start_observer() {
     print_output "${GREEN}📡 Starte Live-Observer (FSD Positions)...${NC}"
-    if is_running "observer.py"; then
+    if is_running "$OBSERVER_PATH"; then
         print_output "${YELLOW}⚠️ Observer läuft bereits.${NC}"
     else
         source "$VENV_ACTIVATE"
-        nohup python "$OBSERVER_PATH" >> "$OBSERVER_LOG" 2>&1 &
+        echo "[fsd_manager] $(date -Is) starting observer" >> "$OBSERVER_LOG"
+        nohup python -u "$OBSERVER_PATH" >> "$OBSERVER_LOG" 2>&1 &
         sleep 1
         print_output "${GREEN}✅ Observer gestartet (PID: $(pgrep -f observer.py | head -n1))${NC}"
     fi
@@ -127,7 +130,8 @@ start_observer() {
 show_logs() {
     clear
     echo -e "${YELLOW}📜 Log-Viewer (STRG + C zum Beenden)...${NC}"
-    tail -f "$DEBUG_LOG" "$FSD_LOG" "$OBSERVER_LOG"
+    tail -f "$WEB_LOG" "$FSD_LOG" "$OBSERVER_LOG"
+
 }
 
 stop_all() {
