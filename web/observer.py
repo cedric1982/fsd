@@ -7,21 +7,32 @@ import threading
 import urllib.request
 import urllib.error
 import math
-import socket
-# ...
 
-DEBUG_RX = True           # auf False, wenn es zu viel wird
-SOCK_TIMEOUT_SEC = 60     # testweise höher als 10s
+FSD_HOST = os.environ.get("FSD_HOST", "127.0.0.1")
+FSD_PORT = int(os.environ.get("FSD_PORT", "6809"))
 
+# Flask läuft intern auf 8080
+PUSH_URL = os.environ.get("FSD_PUSH_URL", "http://127.0.0.1:8080/api/live_update")
+PUSH_TOKEN = os.environ.get("FSD_PUSH_TOKEN", "my-super-secret-token")
+PUSH_INTERVAL = float(os.environ.get("FSD_PUSH_INTERVAL", "1.0"))
+
+# Login-Line (optional)
+LOGIN_LINE = os.environ.get("FSD_LOGIN_LINE", "").strip()
+
+# Debug/Socket
+DEBUG_RX = True
+SOCK_TIMEOUT_SEC = 60  # testweise höher
+
+# -------------------------------------------------------------------
+# RX Debug
+# -------------------------------------------------------------------
 def _hexdump_prefix(b: bytes, max_len: int = 64) -> str:
-    """Short hex prefix for debugging."""
     bb = b[:max_len]
     return " ".join(f"{x:02x}" for x in bb) + (" ..." if len(b) > max_len else "")
 
 def log_rx_bytes(chunk: bytes):
     if not DEBUG_RX:
         return
-    # repr zeigt auch Steuerzeichen; hexdump hilft, wenn es nicht UTF-8 ist
     try:
         text = chunk.decode("utf-8", errors="replace")
     except Exception:
@@ -30,42 +41,18 @@ def log_rx_bytes(chunk: bytes):
     print(f"[observer] RX text: {text}")
     print(f"[observer] RX hex:  {_hexdump_prefix(chunk)}")
 
-
-FSD_HOST = os.environ.get("FSD_HOST", "127.0.0.1")
-FSD_PORT = int(os.environ.get("FSD_PORT", "6809"))
-
-# Flask läuft bei dir intern auf 8080
-PUSH_URL = os.environ.get("FSD_PUSH_URL", "http://127.0.0.1:8080/api/live_update")
-
-# Shared Secret, damit nicht jeder im LAN deine Live-API spammen kann
-PUSH_TOKEN = os.environ.get("FSD_PUSH_TOKEN", "my-super-secret-token")
-
-# Sende-Intervall (Sekunden)
-PUSH_INTERVAL = float(os.environ.get("FSD_PUSH_INTERVAL", "1.0"))
-
-# Wenn dein FSD ein Login erwartet, kann man hier eine Zeile konfigurieren (optional)
-# Beispiel (falls nötig): "X:OBSERVER:7000000:SERVER:0:0\r\n"
-LOGIN_LINE = os.environ.get("FSD_LOGIN_LINE", "").strip()
-
-
 # -------------------------------------------------------------------
-# PBH Decoder
-# Swift-kompatibel: swift::core::fsd::unpackPBH semantics
+# PBH Decoder (Swift-kompatibel: swift::core::fsd::unpackPBH)
 # -------------------------------------------------------------------
 PITCH_MULT = 256.0 / 90.0
 BANK_MULT  = 512.0 / 180.0
 HDG_MULT   = 1024.0 / 360.0
 
 def sign_extend_10bit(x: int) -> int:
-    """Convert 10-bit two's complement integer to Python int."""
     x &= 0x3FF
     return x - 0x400 if (x & 0x200) else x
 
 def unpack_pbh(pbh_u32: int) -> dict:
-    """
-    Decode Swift PBH uint32 into (pitch_deg, bank_deg, heading_deg, on_ground)
-    following swift::core::fsd::unpackPBH semantics.
-    """
     pbh = pbh_u32 & 0xFFFFFFFF
 
     unused    = (pbh >> 0) & 0x1
@@ -74,7 +61,6 @@ def unpack_pbh(pbh_u32: int) -> dict:
     bank_raw  = sign_extend_10bit((pbh >> 12) & 0x3FF)
     pitch_raw = sign_extend_10bit((pbh >> 22) & 0x3FF)
 
-    # Swift uses qFloor on the division results for pitch/bank
     pitch_deg = math.floor(pitch_raw / -PITCH_MULT)
     bank_deg  = math.floor(bank_raw  / -BANK_MULT)
     heading_deg = hdg_raw / HDG_MULT  # == hdg_raw * 360 / 1024
@@ -92,19 +78,18 @@ def unpack_pbh(pbh_u32: int) -> dict:
         "bank_deg": bank_deg,
     }
 
-
+# -------------------------------------------------------------------
+# Parser
+# -------------------------------------------------------------------
 def parse_position_line(line: str):
     """
-    Erwartetes Format (aus deinem tcpdump ableitbar):
-      @CALLSIGN:SQUAWK:TYPE:LAT:LON:ALT:GS:PBH
-
-    Wir sind robust: falls irgendwo im Text ein '@' vorkommt, schneiden wir davor ab.
+    Erwartetes Format (aus deinem tcpdump abgeleitet):
+      @CALLSIGN:SQUAWK:TYPE:LAT:LON:ALT:GS:PBH:VS
     """
     if "@" not in line:
         return None
-    line = line[line.find("@"):]  # ab dem '@'
-    line = line.strip()
 
+    line = line[line.find("@"):].strip()
     if not line.startswith("@"):
         return None
 
@@ -113,20 +98,19 @@ def parse_position_line(line: str):
         return None
 
     callsign = parts[0].strip()
-    squawk = parts[1].strip()
-    ctype = parts[2].strip()
+    squawk   = parts[1].strip()
+    ctype    = parts[2].strip()
 
     try:
         lat = float(parts[3])
         lon = float(parts[4])
         alt = int(float(parts[5]))
-        gs = int(float(parts[6]))
+        gs  = int(float(parts[6]))
         pbh_raw = int(float(parts[7]))
-        vs = int(float(parts[8]))
+        vs  = int(float(parts[8]))
     except ValueError:
         return None
 
-       # PBH decodieren
     decoded = unpack_pbh(pbh_raw)
 
     return {
@@ -139,7 +123,7 @@ def parse_position_line(line: str):
         "gs": gs,
         "vs": vs,
 
-        # PBH-Decode (Heading wie im Simulator)
+        # PBH decode
         "pbh_u32": decoded["pbh_u32"],
         "hdg_deg": round(decoded["heading_deg"], 2),
         "hdg_deg_round": decoded["heading_deg_rounded"],
@@ -150,9 +134,9 @@ def parse_position_line(line: str):
         "ts": int(time.time())
     }
 
-
-    
-
+# -------------------------------------------------------------------
+# HTTP Push
+# -------------------------------------------------------------------
 def http_post_json(url: str, token: str, payload: dict):
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
@@ -167,6 +151,9 @@ def http_post_json(url: str, token: str, payload: dict):
     with urllib.request.urlopen(req, timeout=2) as resp:
         return resp.status
 
+# -------------------------------------------------------------------
+# Observer
+# -------------------------------------------------------------------
 class LiveObserver:
     def __init__(self):
         self.clients = {}
@@ -179,7 +166,6 @@ class LiveObserver:
 
     def snapshot(self):
         with self.lock:
-            # als Liste rausgeben (praktischer fürs Frontend)
             return list(self.clients.values())
 
     def push_loop(self):
@@ -196,9 +182,7 @@ class LiveObserver:
 
             time.sleep(0.05)
 
-
     def run(self):
-        # Push-Thread starten
         threading.Thread(target=self.push_loop, daemon=True).start()
 
         backoff = 1
@@ -206,7 +190,7 @@ class LiveObserver:
             try:
                 print(f"[observer] connecting to {FSD_HOST}:{FSD_PORT} ...")
                 sock = socket.create_connection((FSD_HOST, FSD_PORT), timeout=5)
-                sock.settimeout(10)
+                sock.settimeout(SOCK_TIMEOUT_SEC)
 
                 if LOGIN_LINE:
                     sock.sendall((LOGIN_LINE + "\r\n").encode("utf-8", errors="ignore"))
@@ -214,51 +198,43 @@ class LiveObserver:
                 else:
                     print("[observer] WARNING: FSD_LOGIN_LINE is empty -> no login sent")
 
-
                 print("[observer] connected.")
                 backoff = 1
 
                 buf = b""
                 while True:
                     try:
-    chunk = sock.recv(4096)
-except socket.timeout:
-    print(f"[observer] RX timeout after {SOCK_TIMEOUT_SEC}s (no data from server)")
-    raise
+                        chunk = sock.recv(4096)
+                    except socket.timeout:
+                        print(f"[observer] RX timeout after {SOCK_TIMEOUT_SEC}s (no data from server)")
+                        raise
 
-if not chunk:
-    raise ConnectionError("socket closed")
+                    if not chunk:
+                        raise ConnectionError("socket closed")
 
-# Rohdaten loggen (damit wir Banner/ERR etc. sehen)
-log_rx_bytes(chunk)
+                    # Rohdaten loggen (Banner/ERR etc.)
+                    log_rx_bytes(chunk)
 
-buf += chunk
+                    buf += chunk
 
-# Robust gegen \r, \r\n, \n:
-# wir normalisieren \r -> \n und splitten dann nur auf \n
-norm = buf.replace(b"\r", b"\n")
-while b"\n" in norm:
-    line, rest = norm.split(b"\n", 1)
+                    # robust gegen \r\n, \r, \n
+                    buf = buf.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
 
-    # Achtung: Wir müssen 'rest' wieder zurück in Original-Buffer übertragen
-    # Dazu bauen wir buf neu aus rest, aber in der normalisierten Form.
-    # Einfachheit: wir setzen buf = rest (normalisiert).
-    buf = rest
-    norm = buf
+                    while b"\n" in buf:
+                        line, buf = buf.split(b"\n", 1)
+                        s = line.decode("utf-8", errors="ignore").strip()
+                        if not s:
+                            continue
 
-    s = line.decode("utf-8", errors="ignore").strip()
-    if not s:
-        continue
+                        print(f"[observer] RX line: {s}")
 
-    # ALLE Serverzeilen loggen (wichtig!)
-    print(f"[observer] RX line: {s}")
-
-    # Positionsdaten nur dann parsen, wenn eine @-Line drin ist
-    if "@" in s:
-        obj = parse_position_line(s)
-        if obj:
-            self.update_client(obj)
-
+                        if "@" in s:
+                            obj = parse_position_line(s)
+                            if obj:
+                                # Debug: einmal pro Update ein Sample zeigen
+                                if DEBUG_RX:
+                                    print(f"[observer] parsed: callsign={obj['callsign']} hdg_deg={obj.get('hdg_deg')} pbh_u32={obj.get('pbh_u32')}")
+                                self.update_client(obj)
 
             except Exception as e:
                 print(f"[observer] disconnected: {e}. retry in {backoff}s")
