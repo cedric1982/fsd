@@ -10,704 +10,117 @@
 
   <style>
     :root{
-      --bg: #0d1117;
-      --panel: #111822;
-      --panel-2: #0f1620;
-      --border: rgba(255,255,255,.07);
-      --muted: #8b949e;
-      --text: #c9d1d9;
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --bg:#0d1117;--panel:#111822;--border:rgba(255,255,255,.07);
+      --muted:#8b949e;--text:#c9d1d9;
     }
-
-    body{
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    .app-shell{
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 260px 1fr;
-    }
-
-    /* Sidebar */
-    .sidebar{
-      background: linear-gradient(180deg, #0f1722, #0b121b);
-      border-right: 1px solid var(--border);
-      padding: 18px 16px;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-
-    .brand{
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-    .brand .dot{
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #2ea043; /* initial */
-      box-shadow: 0 0 0 4px rgba(46,160,67,.12);
-    }
-    .brand h4{
-      margin: 0;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: .4px;
-    }
-    .nav-link{
-      color: var(--muted);
-      padding: 10px 10px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .nav-link:hover{
-      background: rgba(255,255,255,.04);
-      color: #fff;
-    }
-    .nav-link.active{
-      background: rgba(255,255,255,.06);
-      color: #fff;
-      border: 1px solid var(--border);
-    }
-    .side-meta{
-      margin-top: 18px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.4;
-    }
-
-    /* Main */
-    .main{
-      padding: 22px 22px 40px;
-    }
-    .main-inner{
-      max-width: 1400px;
-    }
-
-    .topbar{
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 14px;
-    }
-
-    .title h1{
-      font-size: 22px;
-      margin: 0 0 4px 0;
-      font-weight: 750;
-    }
-    .title p{
-      margin: 0;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .panel{
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      box-shadow: var(--shadow);
-    }
-
-    .kpi{
-      padding: 14px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-height: 92px;
-    }
-    .kpi .label{
-      color: var(--muted);
-      font-size: 12px;
-      letter-spacing: .3px;
-    }
-    .kpi .value{
-      font-size: 20px;
-      font-weight: 750;
-      line-height: 1.1;
-    }
-    .kpi .sub{
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .badge-soft{
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.04);
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      color: #fff;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .led{
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #d73a49;
-      box-shadow: 0 0 0 4px rgba(215,58,73,.12);
-    }
-    .led.ok{
-      background: #2ea043;
-      box-shadow: 0 0 0 4px rgba(46,160,67,.12);
-    }
-    .led.warn{
-      background: #d29922;
-      box-shadow: 0 0 0 4px rgba(210,153,34,.12);
-    }
-
-    .section-head{
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    .section-head h2{
-      font-size: 14px;
-      margin: 0;
-      font-weight: 750;
-      letter-spacing: .2px;
-    }
-    .section-actions{
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .btn-ghost{
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.03);
-      color: #fff;
-      border-radius: 12px;
-      padding: 8px 10px;
-      font-size: 12px;
-    }
-    .btn-ghost:hover{
-      background: rgba(255,255,255,.06);
-      color: #fff;
-    }
-
-    /* Tabellen komplett "dark" erzwingen */
-.table-darkish {
-  background: var(--panel);
-}
-
-.table-darkish tbody,
-.table-darkish tbody tr,
-.table-darkish tbody td {
-  background: var(--panel) !important;
-}
-
-.table-darkish.table-hover tbody tr:hover td,
-.table-darkish.table-hover tbody tr:hover th {
-  background: rgba(255,255,255,.04) !important;
-}
-
-/* Optional: Badge-Elemente im Table-Body ebenfalls nicht "hell" wirken lassen */
-.table-darkish .badge-soft {
-  background: rgba(255,255,255,.04);
-}
-
-    /* Small info list */
-    .kv{
-      padding: 14px 16px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px 14px;
-    }
-    .kv .k{
-      color: var(--muted);
-      font-size: 12px;
-    }
-    .kv .v{
-      font-size: 12px;
-      color: #fff;
-      text-align: right;
-    }
-    .kv hr{
-      grid-column: 1 / -1;
-      border: 0;
-      border-top: 1px solid var(--border);
-      margin: 4px 0;
-    }
-
-
-    /* Lesbarkeit für Tabellen-Inhalte erzwingen */
-.table-darkish th,
-.table-darkish td{
-  color: rgba(255,255,255,.92) !important;
-}
-
-/* Header etwas kräftiger */
-.table-darkish thead th {
-  background: var(--panel) !important;
-  color: rgba(255,255,255,.96) !important;
-  border-color: var(--border) !important;
-}
-
-
-/* Body-Text nicht "ausgewaschen" */
-.table-darkish tbody td{
-  border-color: var(--border) !important;
-}
-
-/* Zahlen-Spalten: tabellarische Ziffern + monospace (deutlich besser bei Koordinaten) */
-.table-darkish tbody td:nth-child(3),
-.table-darkish tbody td:nth-child(4),
-.table-darkish tbody td:nth-child(5){
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Optional: Latitude/Longitude rechtsbündig (ruhigeres Layout) */
-.table-darkish tbody td:nth-child(3),
-.table-darkish tbody td:nth-child(4){
-  text-align: right;
-}
-
-    
-    /* Responsive */
-    @media (max-width: 992px){
-      .app-shell{ grid-template-columns: 1fr; }
-      .sidebar{ position: relative; height: auto; }
-      .main{ padding: 16px; }
-    }
+    body{background:var(--bg);color:var(--text)}
+    .badge-soft{border:1px solid var(--border);background:rgba(255,255,255,.04);
+      padding:6px 10px;border-radius:999px;font-size:12px;color:#fff}
+    .led{width:10px;height:10px;border-radius:50%;background:#d73a49}
+    .led.ok{background:#2ea043}
+    .table-darkish{background:var(--panel)}
+    .table-darkish td,.table-darkish th{color:#fff;border-color:var(--border)}
   </style>
 </head>
 
 <body>
-  <div class="app-shell">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="dot" id="side-dot"></div>
-        <div>
-          <h4>FSD Manager</h4>
-          <div class="side-meta">Live Dashboard</div>
-        </div>
-      </div>
+<div class="container-fluid p-3">
 
-      <a class="nav-link active" href="/">Dashboard</a>
-      <a class="nav-link" href="/users">Benutzerverwaltung</a>
-
-      <div class="side-meta">
-        <div><span class="text-white">Endpoint:</span> <span id="endpoint-text">-</span></div>
-        <div><span class="text-white">Letztes Update:</span> <span id="last-update-text">-</span></div>
-      </div>
-    </aside>
-
-    <!-- Main -->
-    <main class="main">
-      <div class="main-inner">
-        <div class="topbar">
-          <div class="title">
-            <h1>FSD Server Dashboard</h1>
-            <p>Live-Status, Clients und Audit-Ereignisse in Echtzeit.</p>
-          </div>
-
-          <div class="section-actions">
-            <span class="badge-soft">
-              <span class="led" id="led"></span>
-              <span id="status-badge-text">OFFLINE</span>
-            </span>
-            <button class="btn-ghost" onclick="location.reload()">Neu laden</button>
-          </div>
-        </div>
-
-        <!-- KPI Row -->
-        <div class="row g-3 mb-3">
-          <div class="col-12 col-md-6 col-xl-3">
-            <div class="panel kpi">
-              <div class="label">Status</div>
-              <div class="value" id="kpi-status">offline</div>
-              <div class="sub">Serverzustand (live)</div>
-            </div>
-          </div>
-          <div class="col-12 col-md-6 col-xl-3">
-            <div class="panel kpi">
-              <div class="label">Uptime</div>
-              <div class="value" id="kpi-uptime">-</div>
-              <div class="sub">Seit Prozessstart</div>
-            </div>
-          </div>
-          <div class="col-12 col-md-6 col-xl-3">
-            <div class="panel kpi">
-              <div class="label">PID</div>
-              <div class="value" id="kpi-pid">-</div>
-              <div class="sub">Aktueller Prozess</div>
-            </div>
-          </div>
-          <div class="col-12 col-md-6 col-xl-3">
-            <div class="panel kpi">
-              <div class="label">Clients</div>
-              <div class="value" id="kpi-clients">0</div>
-              <div class="sub">Aktiv verbunden</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Main grid -->
-        <div class="row g-3 mb-3">
-          <!-- Clients -->
-          <div class="col-12 col-xl-8">
-            <div class="panel">
-              <div class="section-head">
-                <h2>Aktive Clients</h2>
-                <div class="section-actions">
-                  <input id="client-filter" class="form-control form-control-sm"
-                         style="max-width: 220px; background:#0f1620; border:1px solid rgba(255,255,255,.08); color:#fff;"
-                         placeholder="Filter: Callsign / Typ" />
-                </div>
-              </div>
-
-              <div class="table-wrap">
-                <table class="table table-darkish table-hover align-middle">
-                  <thead>
-                    <tr>
-                      <th>Callsign</th>
-                      <th>Typ</th>
-                      <th class="text-end">HDG</th>
-                      <th>Latitude</th>
-                      <th>Longitude</th>
-                      <th class="text-end">Altitude</th>
-                    </tr>
-                  </thead>
-                  <tbody id="clients-body">
-                    <tr>
-                      <td colspan="5">
-                        <div class="empty">Keine aktiven Clients</div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Health -->
-          <div class="col-12 col-xl-4">
-            <div class="panel">
-              <div class="section-head">
-                <h2>Server Health</h2>
-                <div class="section-actions">
-                  <span class="badge-soft"><span class="led warn" id="health-led"></span><span id="health-text">Basis</span></span>
-                </div>
-              </div>
-
-              <div class="kv">
-                <div class="k">Binary</div><div class="v" id="health-binary">unix/fsd</div>
-                <div class="k">PID</div><div class="v" id="health-pid">-</div>
-                <div class="k">Uptime</div><div class="v" id="health-uptime">-</div>
-                <hr>
-                <div class="k">CPU</div><div class="v" id="health-cpu">–</div>
-                <div class="k">RAM</div><div class="v" id="health-ram">–</div>
-                <div class="k">Ports</div><div class="v" id="health-ports">6809 / 3010 / 3011</div>
-                <hr>
-                <div class="k">Hinweis</div><div class="v" style="max-width: 220px; white-space: normal; text-align:right; color: var(--muted);">
-                  CPU/RAM können wir als nächstes per psutil nachrüsten.
-                </div>
-              </div>
-            </div>
-
-            <div class="panel mt-3">
-              <div class="section-head">
-                <h2>Aktivität</h2>
-              </div>
-              <div class="kv">
-                <div class="k">Letzte status.json Änderung</div><div class="v" id="activity-statusjson">-</div>
-                <div class="k">Letztes fsd_status Event</div><div class="v" id="activity-fsdstatus">-</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Logins -->
-        <div class="row g-3">
-          <div class="col-12">
-            <div class="panel">
-              <div class="section-head">
-                <h2>Letzte Loginversuche</h2>
-                <div class="section-actions">
-                  <span class="badge-soft"><span class="led warn" id="audit-led"></span><span id="audit-text">Audit</span></span>
-                </div>
-              </div>
-
-              <div class="table-wrap" style="max-height: 260px;">
-                <table class="table table-darkish table-hover align-middle">
-                  <thead>
-                    <tr>
-                      <th>Zeit</th>
-                      <th>Callsign</th>
-                      <th>CID</th>
-                      <th>Status</th>
-                      <th>Nachricht</th>
-                    </tr>
-                  </thead>
-                  <tbody id="logins-body">
-                    <tr>
-                      <td colspan="5">
-                        <div class="empty">Keine Logins vorhanden</div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </main>
+  <div class="d-flex justify-content-between mb-3">
+    <h3>FSD Server Dashboard</h3>
+    <span class="badge-soft">
+      <span class="led" id="led"></span>
+      <span id="status-badge-text">OFFLINE</span>
+    </span>
   </div>
 
-  <script>
-    const socket = io();
+  <table class="table table-darkish table-hover align-middle">
+    <thead>
+      <tr>
+        <th>Callsign</th>
+        <th>Typ</th>
+        <th class="text-end">HDG</th>
+        <th>Latitude</th>
+        <th>Longitude</th>
+        <th class="text-end">Altitude</th>
+      </tr>
+    </thead>
+    <tbody id="clients-body">
+      <tr>
+        <td colspan="6" class="text-center text-muted">Keine aktiven Clients</td>
+      </tr>
+    </tbody>
+  </table>
 
-    // Sidebar meta
-    document.getElementById("endpoint-text").textContent = window.location.host;
+</div>
 
-    function nowStamp(){
-      const d = new Date();
-      return d.toLocaleTimeString("de-DE", {hour: "2-digit", minute:"2-digit", second:"2-digit"});
+<script>
+  const socket = io();
+
+  let lastClients = [];
+  let liveMode = false;
+
+  function setStatusUI(status){
+    const led = document.getElementById("led");
+    const txt = document.getElementById("status-badge-text");
+    if ((status||"").toLowerCase()==="running"){
+      led.classList.add("ok");
+      txt.textContent="RUNNING";
+    } else {
+      led.classList.remove("ok");
+      txt.textContent="OFFLINE";
     }
-
-    function formatUptime(seconds) {
-      seconds = Number(seconds) || 0;
-      const d = Math.floor(seconds / 86400);
-      seconds %= 86400;
-      const h = Math.floor(seconds / 3600);
-      seconds %= 3600;
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
-
-      const parts = [];
-      if (d > 0) parts.push(`${d}d`);
-      if (h > 0 || d > 0) parts.push(`${h}h`);
-      parts.push(`${m}m`);
-      parts.push(`${s}s`);
-      return parts.join(" ");
-    }
-
-    // UI helpers
-    function setStatusUI(status){
-      const led = document.getElementById("led");
-      const dot = document.getElementById("side-dot");
-      const badgeText = document.getElementById("status-badge-text");
-
-      const kpiStatus = document.getElementById("kpi-status");
-
-      const s = (status || "offline").toLowerCase();
-      kpiStatus.textContent = s;
-
-      if (s === "running") {
-        led.classList.add("ok");
-        dot.style.background = "#2ea043";
-        badgeText.textContent = "RUNNING";
-      } else if (s.startsWith("error")) {
-        led.classList.remove("ok");
-        led.classList.add("warn");
-        dot.style.background = "#d29922";
-        badgeText.textContent = "ERROR";
-      } else {
-        led.classList.remove("ok");
-        led.classList.remove("warn");
-        dot.style.background = "#d73a49";
-        badgeText.textContent = "OFFLINE";
-      }
-    }
-
-    // State
-    let lastClients = [];
-    let lastLogins = [];
-    let lastFsdStatusAt = "-";
-    let lastStatusJsonAt = "-";
-
-    let liveMode = false;   // sobald true: Clients kommen nur noch über live_clients
-
-    // Filter
-    const filterInput = document.getElementById("client-filter");
-    filterInput.addEventListener("input", () => renderClients(lastClients));
-
-    function renderClients(clients){
-      const tbody = document.getElementById("clients-body");
-      const q = (filterInput.value || "").trim().toLowerCase();
-
-      const filtered = (clients || []).filter(c => {
-        const cs = String(c.callsign || "").toLowerCase();
-        const ty = String(c.type || "").toLowerCase();
-        return !q || cs.includes(q) || ty.includes(q);
-      });
-
-      if (!filtered.length){
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5"><div class="empty">Keine aktiven Clients</div></td>
-          </tr>`;
-        document.getElementById("kpi-clients").textContent = "0";
-        return;
-      }
-
-      document.getElementById("kpi-clients").textContent = String(filtered.length);
-
-      tbody.innerHTML = filtered.map(c => `
-        <tr>
-          <td><span class="badge-soft">${c.callsign || "-"}</span></td>
-          <td><span class="badge-soft">${c.type || "-"}</span></td>
-          <td class="text-end">
-              ${typeof c.hdg_deg === "number"
-              ? `${Math.round(c.hdg_deg)}°`
-              : "-"}
-          </td>
-          <td><span class="badge-soft">${Number.parseFloat(c.lat ?? 0).toFixed(6)}</span></td>
-          <td><span class="badge-soft">${Number.parseFloat(c.lon ?? 0).toFixed(6)}</span></td>
-          <td class="text-end">${c.alt ?? "-"}</td>
-        </tr>
-      `).join("");
-    }
-
-    function renderLogins(logins){
-      const tbody = document.getElementById("logins-body");
-      const arr = logins || [];
-      if (!arr.length){
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5"><div class="empty">Keine Logins vorhanden</div></td>
-          </tr>`;
-        return;
-      }
-
-      tbody.innerHTML = arr.slice(0, 200).map(l => `
-        <tr>
-          <td>${l.time || "-"}</td>
-          <td>${l.callsign || "-"}</td>
-          <td>${l.cid || "-"}</td>
-          <td>${l.status || "-"}</td>
-          <td style="color: var(--muted);">${l.message || "-"}</td>
-        </tr>
-      `).join("");
-    }
-
-    // WebSocket events
-    socket.on("connect", () => {
-      document.getElementById("last-update-text").textContent = nowStamp();
-    });
-
-    // Live PID/Uptime/Status
-    socket.on("fsd_status", (data) => {
-      lastFsdStatusAt = nowStamp();
-      document.getElementById("activity-fsdstatus").textContent = lastFsdStatusAt;
-      document.getElementById("last-update-text").textContent = lastFsdStatusAt;
-
-      if (!data) return;
-
-      setStatusUI(data.status);
-
-      document.getElementById("kpi-pid").textContent =
-        (data.pid !== null && data.pid !== undefined) ? String(data.pid) : "-";
-      document.getElementById("kpi-uptime").textContent =
-        (data.status === "running") ? formatUptime(data.uptime_sec) : "-";
-
-      document.getElementById("health-pid").textContent =
-        (data.pid !== null && data.pid !== undefined) ? String(data.pid) : "-";
-      document.getElementById("health-uptime").textContent =
-        (data.status === "running") ? formatUptime(data.uptime_sec) : "-";
-
-      // Health badges
-      const healthLed = document.getElementById("health-led");
-      const healthText = document.getElementById("health-text");
-
-      if ((data.status || "").toLowerCase() === "running"){
-        healthLed.classList.add("ok");
-        healthLed.classList.remove("warn");
-        healthText.textContent = "OK";
-      } else {
-        healthLed.classList.remove("ok");
-        healthLed.classList.add("warn");
-        healthText.textContent = "Degraded";
-      }
-    });
-
-    // status.json payloads (clients/logins)
-    socket.on("status_update", (data) => {
-      lastStatusJsonAt = nowStamp();
-      document.getElementById("activity-statusjson").textContent = lastStatusJsonAt;
-      document.getElementById("last-update-text").textContent = lastStatusJsonAt;
-
-      if (!data) return;
-
-      // Clients NUR aus status.json nehmen, wenn wir NICHT live sind
-      if (!liveMode && Array.isArray(data.clients)){
-        lastClients = data.clients;
-        renderClients(lastClients);
-      }
-
-      if (Array.isArray(data.logins)){
-        lastLogins = data.logins;
-        renderLogins(lastLogins);
-      }
-    });
-
-    // CPU/RAM anzeigen (Host)  <-- HIER rein
-      const cpuEl = document.getElementById("health-cpu");
-      const ramEl = document.getElementById("health-ram");
-
-      if (typeof data.cpu_percent === "number") {
-        cpuEl.textContent = `${Math.round(data.cpu_percent)}%`;
-      } else {
-        cpuEl.textContent = "–";
-      }
-
-      if (typeof data.ram_percent === "number") {
-        const used = typeof data.ram_used_mb === "number" ? (data.ram_used_mb / 1024).toFixed(1) : "?";
-        const total = typeof data.ram_total_mb === "number" ? (data.ram_total_mb / 1024).toFixed(1) : "?";
-        ramEl.textContent = `${Math.round(data.ram_percent)}% (${used}/${total} GB)`;
-      } else {
-        ramEl.textContent = "–";
-      }
-});
-
-      socket.on("live_clients", (payload) => {
-  if (!payload || !Array.isArray(payload.clients)) return;
-
-  // 1) Leere Live-Updates nicht verwenden, wenn wir schon etwas anzeigen
-  if (payload.clients.length === 0 && Array.isArray(lastClients) && lastClients.length > 0) {
-    return;
   }
 
-  // 2) Live-Modus erst aktivieren, wenn wirklich Live-Daten da sind
-  if (payload.clients.length > 0) {
-    liveMode = true;
+  function renderClients(clients){
+    const tbody = document.getElementById("clients-body");
+    if (!clients || clients.length===0){
+      tbody.innerHTML =
+        `<tr><td colspan="6" class="text-center text-muted">
+          Keine aktiven Clients</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = clients.map(c=>`
+      <tr>
+        <td><span class="badge-soft">${c.callsign||"-"}</span></td>
+        <td>${c.type||"-"}</td>
+        <td class="text-end">
+          ${typeof c.hdg_deg==="number" ? Math.round(c.hdg_deg)+"°" : "-"}
+        </td>
+        <td>${Number(c.lat||0).toFixed(6)}</td>
+        <td>${Number(c.lon||0).toFixed(6)}</td>
+        <td class="text-end">${c.alt||"-"}</td>
+      </tr>
+    `).join("");
   }
 
-  // 3) Nur überschreiben, wenn es Sinn ergibt
-  if (payload.clients.length > 0 || !lastClients || lastClients.length === 0) {
-    lastClients = payload.clients;
-    renderClients(lastClients);
-    document.getElementById("kpi-clients").textContent = String(lastClients.length);
-  }
-});
+  socket.on("connect", ()=>{
+    console.log("[socket] connected");
+  });
 
+  socket.on("fsd_status", (data)=>{
+    if (!data) return;
+    setStatusUI(data.status);
+  });
 
+  socket.on("status_update", (data)=>{
+    if (liveMode) return;
+    if (Array.isArray(data.clients)){
+      lastClients = data.clients;
+      renderClients(lastClients);
+    }
+  });
 
+  socket.on("live_clients", (payload)=>{
+    if (!payload || !Array.isArray(payload.clients)) return;
+    if (payload.clients.length>0){
+      liveMode = true;
+      lastClients = payload.clients;
+      renderClients(lastClients);
+    }
+  });
+</script>
 
-  </script>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
