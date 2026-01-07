@@ -388,7 +388,7 @@
                   </thead>
                   <tbody id="clients-body">
                     <tr>
-                      <td colspan="5">
+                      <td colspan="6">
                         <div class="empty">Keine aktiven Clients</div>
                       </td>
                     </tr>
@@ -557,7 +557,7 @@
       if (!filtered.length){
         tbody.innerHTML = `
           <tr>
-            <td colspan="5"><div class="empty">Keine aktiven Clients</div></td>
+            <td colspan="6"><div class="empty">Keine aktiven Clients</div></td>
           </tr>`;
         document.getElementById("kpi-clients").textContent = "0";
         return;
@@ -641,6 +641,24 @@
         healthLed.classList.add("warn");
         healthText.textContent = "Degraded";
       }
+            // CPU/RAM anzeigen (Host)
+      const cpuEl = document.getElementById("health-cpu");
+      const ramEl = document.getElementById("health-ram");
+
+      if (typeof data.cpu_percent === "number") {
+        cpuEl.textContent = `${Math.round(data.cpu_percent)}%`;
+      } else {
+        cpuEl.textContent = "–";
+      }
+
+      if (typeof data.ram_percent === "number") {
+        const used = typeof data.ram_used_mb === "number" ? (data.ram_used_mb / 1024).toFixed(1) : "?";
+        const total = typeof data.ram_total_mb === "number" ? (data.ram_total_mb / 1024).toFixed(1) : "?";
+        ramEl.textContent = `${Math.round(data.ram_percent)}% (${used}/${total} GB)`;
+      } else {
+        ramEl.textContent = "–";
+      }
+
     });
 
     // status.json payloads (clients/logins)
@@ -665,6 +683,8 @@
 
       socket.on("live_clients", (payload) => {
   if (!payload || !Array.isArray(payload.clients)) return;
+  document.getElementById("last-update-text").textContent = nowStamp();
+      
 
   // 1) Leere Live-Updates nicht verwenden, wenn wir schon etwas anzeigen
   if (payload.clients.length === 0 && Array.isArray(lastClients) && lastClients.length > 0) {
@@ -683,26 +703,6 @@
     document.getElementById("kpi-clients").textContent = String(lastClients.length);
   }
 });
-
-
-    // CPU/RAM anzeigen (Host)
-const cpuEl = document.getElementById("health-cpu");
-const ramEl = document.getElementById("health-ram");
-
-if (typeof data.cpu_percent === "number") {
-  cpuEl.textContent = `${Math.round(data.cpu_percent)}%`;
-} else {
-  cpuEl.textContent = "–";
-}
-
-if (typeof data.ram_percent === "number") {
-  const used = typeof data.ram_used_mb === "number" ? (data.ram_used_mb / 1024).toFixed(1) : "?";
-  const total = typeof data.ram_total_mb === "number" ? (data.ram_total_mb / 1024).toFixed(1) : "?";
-  ramEl.textContent = `${Math.round(data.ram_percent)}% (${used}/${total} GB)`;
-} else {
-  ramEl.textContent = "–";
-}
-
 
   </script>
 
