@@ -31,7 +31,7 @@ export FSD_PUSH_TOKEN="my-super-secret-token"
 export FSD_PUSH_URL="http://127.0.0.1:8080/api/live_update"
 export FSD_HOST="127.0.0.1"
 export FSD_PORT="6809"
-export FSD_LOGIN_LINE='N:OBS1:7000000:Observer:SERVER:1'
+export FSD_LOGIN_LINE='X:OBS1:7000000:Observer:SERVER:1'
 
 
 
