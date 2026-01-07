@@ -324,7 +324,8 @@ def api_live_update():
     data = request.get_json(silent=True) or {}
     socketio.emit("live_clients", data)
     return jsonify({"ok": True})
-
+print("live_update keys:", list(data.keys()))
+print("live_update clients sample:", (data.get("clients") or [])[:1])
 
 
 
