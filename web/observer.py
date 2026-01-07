@@ -106,20 +106,7 @@ def parse_position_line(line: str):
    # PBH decodirern
     decoded = unpack_pbh(pbh_raw)
 
-    return {
-        "callsign": callsign,
-        "squawk": squawk,
-        "type": ctype,
-        "lat": lat,
-        "lon": lon,
-        "alt": alt,
-        "gs": gs,
-        "vs": vs,
-
-        # PBH decodieren
-        decoded = unpack_pbh(pbh_raw):
-
-        return {
+     return {
             "callsign": callsign,
             "squawk": squawk,
             "type": ctype,
@@ -132,7 +119,7 @@ def parse_position_line(line: str):
             "ts": int(time.time())
         }
 
-    }
+    
 
 def http_post_json(url: str, token: str, payload: dict):
     data = json.dumps(payload).encode("utf-8")
