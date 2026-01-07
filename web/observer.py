@@ -90,7 +90,7 @@ def parse_position_line(line: str):
         return None
 
     callsign = parts[0].strip()
-    squak = parts[1].strip()
+    squawk = parts[1].strip()
     ctype = parts[2].strip()
 
     try:
@@ -116,15 +116,22 @@ def parse_position_line(line: str):
         "gs": gs,
         "vs": vs,
 
-        # decodirern
-        "pbh_u32": decoded["pbh_u32"],
-        "hdg_deg": round(decoded["heading_deg"], 2),
-        "hdg_deg_round": decoded["heading_deg_rounded"],
-        "pitch_deg": decoded["pitch_deg"],
-        "bank_deg": decoded["bank_deg"],
-        "on_ground": decoded["on_ground"],
+        # PBH decodieren
+        decoded = unpack_pbh(pbh_raw)
 
-        "ts": int(time.time())
+        return {
+            "callsign": callsign,
+            "squawk": squawk,
+            "type": ctype,
+            "pbh_u32": decoded["pbh_u32"],
+            "hdg_deg": round(decoded["heading_deg"], 2),
+            "hdg_deg_round": decoded["heading_deg_rounded"],
+            "pitch_deg": decoded["pitch_deg"],
+            "bank_deg": decoded["bank_deg"],
+            "on_ground": decoded["on_ground"],
+            "ts": int(time.time())
+        }
+
     }
 
 def http_post_json(url: str, token: str, payload: dict):
