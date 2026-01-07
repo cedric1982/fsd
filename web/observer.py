@@ -103,21 +103,30 @@ def parse_position_line(line: str):
     except ValueError:
         return None
 
-   # PBH decodirern
+       # PBH decodieren
     decoded = unpack_pbh(pbh_raw)
 
-     return {
-            "callsign": callsign,
-            "squawk": squawk,
-            "type": ctype,
-            "pbh_u32": decoded["pbh_u32"],
-            "hdg_deg": round(decoded["heading_deg"], 2),
-            "hdg_deg_round": decoded["heading_deg_rounded"],
-            "pitch_deg": decoded["pitch_deg"],
-            "bank_deg": decoded["bank_deg"],
-            "on_ground": decoded["on_ground"],
-            "ts": int(time.time())
-        }
+    return {
+        "callsign": callsign,
+        "squawk": squawk,
+        "type": ctype,
+        "lat": lat,
+        "lon": lon,
+        "alt": alt,
+        "gs": gs,
+        "vs": vs,
+
+        # PBH-Decode (Heading wie im Simulator)
+        "pbh_u32": decoded["pbh_u32"],
+        "hdg_deg": round(decoded["heading_deg"], 2),
+        "hdg_deg_round": decoded["heading_deg_rounded"],
+        "pitch_deg": decoded["pitch_deg"],
+        "bank_deg": decoded["bank_deg"],
+        "on_ground": decoded["on_ground"],
+
+        "ts": int(time.time())
+    }
+
 
     
 
