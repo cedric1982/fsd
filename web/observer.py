@@ -7,6 +7,29 @@ import threading
 import urllib.request
 import urllib.error
 import math
+import socket
+# ...
+
+DEBUG_RX = True           # auf False, wenn es zu viel wird
+SOCK_TIMEOUT_SEC = 60     # testweise höher als 10s
+
+def _hexdump_prefix(b: bytes, max_len: int = 64) -> str:
+    """Short hex prefix for debugging."""
+    bb = b[:max_len]
+    return " ".join(f"{x:02x}" for x in bb) + (" ..." if len(b) > max_len else "")
+
+def log_rx_bytes(chunk: bytes):
+    if not DEBUG_RX:
+        return
+    # repr zeigt auch Steuerzeichen; hexdump hilft, wenn es nicht UTF-8 ist
+    try:
+        text = chunk.decode("utf-8", errors="replace")
+    except Exception:
+        text = "<decode failed>"
+    print(f"[observer] RX bytes len={len(chunk)} repr={chunk!r}")
+    print(f"[observer] RX text: {text}")
+    print(f"[observer] RX hex:  {_hexdump_prefix(chunk)}")
+
 
 FSD_HOST = os.environ.get("FSD_HOST", "127.0.0.1")
 FSD_PORT = int(os.environ.get("FSD_PORT", "6809"))
@@ -197,21 +220,45 @@ class LiveObserver:
 
                 buf = b""
                 while True:
-                    chunk = sock.recv(4096)
-                    if not chunk:
-                        raise ConnectionError("socket closed")
+                    try:
+    chunk = sock.recv(4096)
+except socket.timeout:
+    print(f"[observer] RX timeout after {SOCK_TIMEOUT_SEC}s (no data from server)")
+    raise
 
-                    buf += chunk
-                    # zeilenweise verarbeiten (FSD nutzt meist \r\n)
-                    while b"\n" in buf:
-                        line, buf = buf.split(b"\n", 1)
-                        s = line.decode("utf-8", errors="ignore").strip()
-                        if not s:
-                            continue
-                        if "@" in s:
-                            obj = parse_position_line(s)
-                            if obj:
-                                self.update_client(obj)
+if not chunk:
+    raise ConnectionError("socket closed")
+
+# Rohdaten loggen (damit wir Banner/ERR etc. sehen)
+log_rx_bytes(chunk)
+
+buf += chunk
+
+# Robust gegen \r, \r\n, \n:
+# wir normalisieren \r -> \n und splitten dann nur auf \n
+norm = buf.replace(b"\r", b"\n")
+while b"\n" in norm:
+    line, rest = norm.split(b"\n", 1)
+
+    # Achtung: Wir müssen 'rest' wieder zurück in Original-Buffer übertragen
+    # Dazu bauen wir buf neu aus rest, aber in der normalisierten Form.
+    # Einfachheit: wir setzen buf = rest (normalisiert).
+    buf = rest
+    norm = buf
+
+    s = line.decode("utf-8", errors="ignore").strip()
+    if not s:
+        continue
+
+    # ALLE Serverzeilen loggen (wichtig!)
+    print(f"[observer] RX line: {s}")
+
+    # Positionsdaten nur dann parsen, wenn eine @-Line drin ist
+    if "@" in s:
+        obj = parse_position_line(s)
+        if obj:
+            self.update_client(obj)
+
 
             except Exception as e:
                 print(f"[observer] disconnected: {e}. retry in {backoff}s")
