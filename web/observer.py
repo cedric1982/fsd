@@ -8,6 +8,7 @@ import urllib.request
 import math
 from typing import Optional, Dict, Any, List
 import sys
+
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
@@ -21,13 +22,27 @@ PUSH_URL = os.environ.get("FSD_PUSH_URL", "http://127.0.0.1:8080/api/live_update
 PUSH_TOKEN = os.environ.get("FSD_PUSH_TOKEN", "my-super-secret-token")
 PUSH_INTERVAL = float(os.environ.get("FSD_PUSH_INTERVAL", "1.0"))
 
-# Wichtig: Login-Zeile muss exakt zu deinem FSD passen.
-# Diese Zeile wird 1:1 gesendet (ohne zusätzliches Parsen).
-LOGIN_LINE = os.environ.get("FSD_LOGIN_LINE", "").strip()
-
-# Optional: Logging/Debug
 DEBUG_RX = os.environ.get("FSD_DEBUG_RX", "1").strip() not in ("0", "false", "False", "")
 SOCK_TIMEOUT_SEC = int(os.environ.get("FSD_SOCK_TIMEOUT", "30"))
+
+# ---- Login defaults (passend zu deinem FSD-Server: #AA / #AP) ----
+FSD_LOGIN_MODE = os.environ.get("FSD_LOGIN_MODE", "AA").strip().upper()  # "AA" oder "AP"
+FSD_CALLSIGN = os.environ.get("FSD_CALLSIGN", "OBS1").strip()
+FSD_REALNAME = os.environ.get("FSD_REALNAME", "Observer").strip()
+
+# CID/PWD können leer sein, um erst mal Syntax zu testen; Server kann dann Auth ablehnen.
+FSD_CID = os.environ.get("FSD_CID", "").strip()
+FSD_PASSWORD = os.environ.get("FSD_PASSWORD", "").strip()
+
+# Level/Revision müssen zu deinem Server passen. In deinem Code ist Revision typischerweise 9.
+FSD_LEVEL = os.environ.get("FSD_LEVEL", "0").strip()
+FSD_REVISION = os.environ.get("FSD_REVISION", "9").strip()
+
+# Optional: SimType für #AP (wenn benötigt)
+FSD_SIMTYPE = os.environ.get("FSD_SIMTYPE", "0").strip()
+
+# Optional: Wenn gesetzt, wird das 1:1 gesendet (wie früher). Hat Priorität.
+LOGIN_LINE = os.environ.get("FSD_LOGIN_LINE", "").strip()
 
 # =============================================================================
 # PBH Decoder (Swift-kompatible Semantik)
@@ -49,10 +64,9 @@ def unpack_pbh(pbh_u32: int) -> Dict[str, Any]:
     bank_raw  = sign_extend_10bit((pbh >> 12) & 0x3FF)
     pitch_raw = sign_extend_10bit((pbh >> 22) & 0x3FF)
 
-    # Swift uses qFloor on pitch/bank
     pitch_deg = math.floor(pitch_raw / -PITCH_MULT)
     bank_deg  = math.floor(bank_raw  / -BANK_MULT)
-    heading_deg = hdg_raw / HDG_MULT  # == hdg_raw * 360 / 1024
+    heading_deg = hdg_raw / HDG_MULT
 
     return {
         "pbh_u32": pbh,
@@ -72,7 +86,7 @@ def unpack_pbh(pbh_u32: int) -> Dict[str, Any]:
 # =============================================================================
 def parse_position_line(line: str) -> Optional[Dict[str, Any]]:
     """
-    Erwartetes Format (aus deinen Dumps):
+    Erwartetes Format:
       @CALLSIGN:SQUAWK:TYPE:LAT:LON:ALT:GS:PBH:VS
     """
     if "@" not in line:
@@ -112,7 +126,6 @@ def parse_position_line(line: str) -> Optional[Dict[str, Any]]:
         "gs": gs,
         "vs": vs,
 
-        # PBH Decode
         "pbh_u32": decoded["pbh_u32"],
         "hdg_deg": round(decoded["heading_deg"], 2),
         "hdg_deg_round": decoded["heading_deg_rounded"],
@@ -187,14 +200,30 @@ class LiveObserver:
                 self.last_push = now
             time.sleep(0.05)
 
-    def _send_login(self, sock: socket.socket):
-        # Wichtig: FSD erwartet meistens CRLF
+    def _build_login_line(self) -> str:
+        # Priorität: explizite FSD_LOGIN_LINE (1:1 senden)
         if LOGIN_LINE:
-            line = LOGIN_LINE.rstrip("\r\n") + "\r\n"
-            sock.sendall(line.encode("utf-8", errors="ignore"))
-            print(f"[observer] sent login: {LOGIN_LINE}")
-        else:
-            print("[observer] WARNING: FSD_LOGIN_LINE empty -> no login sent")
+            return LOGIN_LINE.rstrip("\r\n")
+
+        # Default: Login passend zu deinem FSD-Server (#AA oder #AP)
+        if FSD_LOGIN_MODE == "AA":
+            # Erwartet mindestens 7 Felder nach dem Kommando:
+            # #AA + callsign : <unused> : realname : cid : pwd : level : revision
+            return f"#AA{FSD_CALLSIGN}::{FSD_REALNAME}:{FSD_CID}:{FSD_PASSWORD}:{FSD_LEVEL}:{FSD_REVISION}"
+
+        if FSD_LOGIN_MODE == "AP":
+            # Erwartet mindestens 8 Felder:
+            # #AP + callsign : <unused> : cid : pwd : level : revision : simtype : realname
+            return f"#AP{FSD_CALLSIGN}::{FSD_CID}:{FSD_PASSWORD}:{FSD_LEVEL}:{FSD_REVISION}:{FSD_SIMTYPE}:{FSD_REALNAME}"
+
+        # Fallback: bewusst klarer Fehler
+        raise ValueError("FSD_LOGIN_MODE must be 'AA' or 'AP' (or set FSD_LOGIN_LINE explicitly)")
+
+    def _send_login(self, sock: socket.socket):
+        line = self._build_login_line()
+        wire = (line + "\r\n").encode("utf-8", errors="ignore")
+        sock.sendall(wire)
+        print(f"[observer] sent login: {line}")
 
     def run(self):
         threading.Thread(target=self.push_loop, daemon=True).start()
@@ -207,9 +236,7 @@ class LiveObserver:
                 sock = socket.create_connection((FSD_HOST, FSD_PORT), timeout=8)
                 sock.settimeout(SOCK_TIMEOUT_SEC)
 
-                # Login sofort senden
                 self._send_login(sock)
-
                 print("[observer] tcp connected, waiting for server feed...")
 
                 buf = b""
@@ -220,27 +247,18 @@ class LiveObserver:
 
                     log_rx_chunk(chunk)
 
+                    # robustes Zeilenhandling
                     buf += chunk
+                    buf = buf.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
 
-                    # robust gegen \r, \r\n, \n
-                    # wir splitten auf \n nachdem wir \r -> \n normalisiert haben
-                    norm = buf.replace(b"\r", b"\n")
-
-                    while b"\n" in norm:
-                        raw_line, rest = norm.split(b"\n", 1)
-
-                        # rest ist bereits normalisiert; übernehmen
-                        buf = rest
-                        norm = buf
-
+                    while b"\n" in buf:
+                        raw_line, buf = buf.split(b"\n", 1)
                         s = raw_line.decode("utf-8", errors="ignore").strip()
                         if not s:
                             continue
 
-                        # alles loggen (entscheidend fürs Login-Problem)
                         print(f"[observer] RX line: {s}")
 
-                        # Positionsdaten
                         if "@" in s:
                             obj = parse_position_line(s)
                             if obj:
