@@ -7,6 +7,9 @@ import threading
 import urllib.request
 import math
 from typing import Optional, Dict, Any, List
+import sys
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
 
 # =============================================================================
 # Config (ENV)
