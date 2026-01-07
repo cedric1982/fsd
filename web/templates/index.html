@@ -663,6 +663,25 @@
       }
     });
 
+    // CPU/RAM anzeigen (Host)  <-- HIER rein
+      const cpuEl = document.getElementById("health-cpu");
+      const ramEl = document.getElementById("health-ram");
+
+      if (typeof data.cpu_percent === "number") {
+        cpuEl.textContent = `${Math.round(data.cpu_percent)}%`;
+      } else {
+        cpuEl.textContent = "–";
+      }
+
+      if (typeof data.ram_percent === "number") {
+        const used = typeof data.ram_used_mb === "number" ? (data.ram_used_mb / 1024).toFixed(1) : "?";
+        const total = typeof data.ram_total_mb === "number" ? (data.ram_total_mb / 1024).toFixed(1) : "?";
+        ramEl.textContent = `${Math.round(data.ram_percent)}% (${used}/${total} GB)`;
+      } else {
+        ramEl.textContent = "–";
+      }
+});
+
       socket.on("live_clients", (payload) => {
   if (!payload || !Array.isArray(payload.clients)) return;
 
@@ -685,23 +704,6 @@
 });
 
 
-    // CPU/RAM anzeigen (Host)
-const cpuEl = document.getElementById("health-cpu");
-const ramEl = document.getElementById("health-ram");
-
-if (typeof data.cpu_percent === "number") {
-  cpuEl.textContent = `${Math.round(data.cpu_percent)}%`;
-} else {
-  cpuEl.textContent = "–";
-}
-
-if (typeof data.ram_percent === "number") {
-  const used = typeof data.ram_used_mb === "number" ? (data.ram_used_mb / 1024).toFixed(1) : "?";
-  const total = typeof data.ram_total_mb === "number" ? (data.ram_total_mb / 1024).toFixed(1) : "?";
-  ramEl.textContent = `${Math.round(data.ram_percent)}% (${used}/${total} GB)`;
-} else {
-  ramEl.textContent = "–";
-}
 
 
   </script>
