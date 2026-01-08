@@ -567,14 +567,14 @@
       tbody.innerHTML = filtered.map(c => `
         <tr>
           <td><span class="badge-soft">${c.callsign || "-"}</span></td>
-          <td class="text-end">
+          <td><span class="badge-soft">
               ${typeof c.hdg_deg === "number"
               ? `${Math.round(c.hdg_deg)}°`
               : "-"}
-          </td>
+          </span></td>
           <td><span class="badge-soft">${Number.parseFloat(c.lat ?? 0).toFixed(6)}</span></td>
           <td><span class="badge-soft">${Number.parseFloat(c.lon ?? 0).toFixed(6)}</span></td>
-          <td class="text-end">${c.alt ?? "-"}</td>
+          <td><span class="badge-soft">${c.alt ?? "-"}</span></td>
         </tr>
       `).join("");
     }
