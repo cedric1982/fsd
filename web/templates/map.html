@@ -138,10 +138,10 @@
 
   <script>
     // Karte
-    const map = L.map('map', { worldCopyJump: true }).setView([20, 0], 2);
+    const map = L.map('map', { worldCopyJump: true, zoomSnap: 0.5, soomDelta: 0.5 }).setView([20, 0], 2);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 10,
+      maxZoom: 19,
       attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
@@ -183,25 +183,25 @@
       `;
     }
 
-    function makeAircraftDivIcon(callsign, headingDeg) {
+    function makeAircraftDivIcon(headingDeg) {
       const safeHdg = Number.isFinite(headingDeg) ? headingDeg : 0;
-      const label = callsign ? `<div class="aircraft-label">${callsign}</div>` : "";
+
       const html = `
         <div class="aircraft-wrapper">
           <div style="transform: rotate(${safeHdg}deg);">
             ${aircraftSvg()}
           </div>
-          ${label}
         </div>
       `;
 
       return L.divIcon({
-        className: "",        // keine Leaflet-default styles
+        className: "",
         html,
-        iconSize: [1, 1],     // tatsächliche Größe kommt aus HTML/CSS
-        iconAnchor: [0, 0]    // wir zentrieren via translate(-50%,-50%)
+        iconSize: [1, 1],
+        iconAnchor: [0, 0]
       });
     }
+
 
     function applyClients(clients) {
       const seen = new Set();
@@ -223,7 +223,7 @@
 
         if (!marker) {
           marker = L.marker(latlng, {
-            icon: makeAircraftDivIcon(callsign, hdg),
+            icon: makeAircraftDivIcon(hdg),
             keyboard: false
           }).addTo(map);
 
@@ -233,7 +233,7 @@
           marker.setLatLng(latlng);
 
           // Icon aktualisieren, wenn sich Heading ändert
-          marker.setIcon(makeAircraftDivIcon(callsign, hdg));
+          marker.setIcon(makeAircraftDivIcon(hdg));
           marker.setPopupContent(popupHtml(c));
         }
       }
