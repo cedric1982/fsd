@@ -202,25 +202,59 @@
     }
 
     /* Tabellen komplett "dark" erzwingen */
-.table-darkish {
-  background: var(--panel);
-}
+    .table-darkish {
+      background: var(--panel);
+    }
 
-.table-darkish tbody,
-.table-darkish tbody tr,
-.table-darkish tbody td {
-  background: var(--panel) !important;
-}
+    .table-darkish tbody,
+    .table-darkish tbody tr,
+    .table-darkish tbody td {
+      background: var(--panel) !important;
+    }
 
-.table-darkish.table-hover tbody tr:hover td,
-.table-darkish.table-hover tbody tr:hover th {
-  background: rgba(255,255,255,.04) !important;
-}
+    .table-darkish.table-hover tbody tr:hover td,
+    .table-darkish.table-hover tbody tr:hover th {
+      background: rgba(255,255,255,.04) !important;
+    }
 
-/* Optional: Badge-Elemente im Table-Body ebenfalls nicht "hell" wirken lassen */
-.table-darkish .badge-soft {
-  background: rgba(255,255,255,.04);
-}
+    .table-darkish .badge-soft {
+      background: rgba(255,255,255,.04);
+    }
+
+    /* Lesbarkeit für Tabellen-Inhalte erzwingen */
+    .table-darkish th,
+    .table-darkish td{
+      color: rgba(255,255,255,.92) !important;
+    }
+
+    /* Header etwas kräftiger */
+    .table-darkish thead th {
+      background: var(--panel) !important;
+      color: rgba(255,255,255,.96) !important;
+      border-color: var(--border) !important;
+    }
+
+    /* Body-Text nicht "ausgewaschen" */
+    .table-darkish tbody td{
+      border-color: var(--border) !important;
+    }
+
+    /* Zahlen-Spalten: tabellarische Ziffern + monospace
+       Spalten: 1=Callsign, 2=HDG, 3=Lat, 4=Lon, 5=Alt
+    */
+    .table-darkish tbody td:nth-child(2),
+    .table-darkish tbody td:nth-child(3),
+    .table-darkish tbody td:nth-child(4),
+    .table-darkish tbody td:nth-child(5){
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Optional: Latitude/Longitude rechtsbündig */
+    .table-darkish tbody td:nth-child(3),
+    .table-darkish tbody td:nth-child(4){
+      text-align: right;
+    }
 
     /* Small info list */
     .kv{
@@ -245,41 +279,6 @@
       margin: 4px 0;
     }
 
-
-    /* Lesbarkeit für Tabellen-Inhalte erzwingen */
-.table-darkish th,
-.table-darkish td{
-  color: rgba(255,255,255,.92) !important;
-}
-
-/* Header etwas kräftiger */
-.table-darkish thead th {
-  background: var(--panel) !important;
-  color: rgba(255,255,255,.96) !important;
-  border-color: var(--border) !important;
-}
-
-
-/* Body-Text nicht "ausgewaschen" */
-.table-darkish tbody td{
-  border-color: var(--border) !important;
-}
-
-/* Zahlen-Spalten: tabellarische Ziffern + monospace (deutlich besser bei Koordinaten) */
-.table-darkish tbody td:nth-child(3),
-.table-darkish tbody td:nth-child(4),
-.table-darkish tbody td:nth-child(5){
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Optional: Latitude/Longitude rechtsbündig (ruhigeres Layout) */
-.table-darkish tbody td:nth-child(3),
-.table-darkish tbody td:nth-child(4){
-  text-align: right;
-}
-
-    
     /* Responsive */
     @media (max-width: 992px){
       .app-shell{ grid-template-columns: 1fr; }
@@ -370,7 +369,7 @@
                 <div class="section-actions">
                   <input id="client-filter" class="form-control form-control-sm"
                          style="max-width: 220px; background:#0f1620; border:1px solid rgba(255,255,255,.08); color:#fff;"
-                         placeholder="Filter: Callsign / Typ" />
+                         placeholder="Filter: Callsign" />
                 </div>
               </div>
 
@@ -387,7 +386,7 @@
                   </thead>
                   <tbody id="clients-body">
                     <tr>
-                      <td colspan="6">
+                      <td colspan="5">
                         <div class="empty">Keine aktiven Clients</div>
                       </td>
                     </tr>
@@ -503,12 +502,19 @@
       return parts.join(" ");
     }
 
+    function formatHdg(hdg){
+      if (hdg === null || hdg === undefined) return "-";
+      const n = Number(hdg);
+      if (!Number.isFinite(n)) return "-";
+      const deg = ((Math.round(n) % 360) + 360) % 360; // 0..359
+      return String(deg).padStart(3, "0") + "°";
+    }
+
     // UI helpers
     function setStatusUI(status){
       const led = document.getElementById("led");
       const dot = document.getElementById("side-dot");
       const badgeText = document.getElementById("status-badge-text");
-
       const kpiStatus = document.getElementById("kpi-status");
 
       const s = (status || "offline").toLowerCase();
@@ -516,6 +522,7 @@
 
       if (s === "running") {
         led.classList.add("ok");
+        led.classList.remove("warn");
         dot.style.background = "#2ea043";
         badgeText.textContent = "RUNNING";
       } else if (s.startsWith("error")) {
@@ -536,8 +543,7 @@
     let lastLogins = [];
     let lastFsdStatusAt = "-";
     let lastStatusJsonAt = "-";
-
-    let liveMode = false;   // sobald true: Clients kommen nur noch über live_clients
+    let liveMode = false; // sobald true: Clients kommen nur noch über live_clients
 
     // Filter
     const filterInput = document.getElementById("client-filter");
@@ -549,14 +555,13 @@
 
       const filtered = (clients || []).filter(c => {
         const cs = String(c.callsign || "").toLowerCase();
-        const ty = String(c.type || "").toLowerCase();
-        return !q || cs.includes(q) || ty.includes(q);
+        return !q || cs.includes(q);
       });
 
       if (!filtered.length){
         tbody.innerHTML = `
           <tr>
-            <td colspan="6"><div class="empty">Keine aktiven Clients</div></td>
+            <td colspan="5"><div class="empty">Keine aktiven Clients</div></td>
           </tr>`;
         document.getElementById("kpi-clients").textContent = "0";
         return;
@@ -567,10 +572,10 @@
       tbody.innerHTML = filtered.map(c => `
         <tr>
           <td><span class="badge-soft">${c.callsign || "-"}</span></td>
-          <td><span class="badge-soft">{{ "%03d"|format(client.hdg|int) }}&deg;</span></td>
+          <td class="text-end"><span class="badge-soft">${formatHdg(c.hdg)}</span></td>
           <td><span class="badge-soft">${Number.parseFloat(c.lat ?? 0).toFixed(6)}</span></td>
           <td><span class="badge-soft">${Number.parseFloat(c.lon ?? 0).toFixed(6)}</span></td>
-          <td class="text-end">${c.alt ?? "-"}</td>
+          <td class="text-end"><span class="badge-soft">${c.alt ?? "-"}</span></td>
         </tr>
       `).join("");
     }
@@ -635,7 +640,8 @@
         healthLed.classList.add("warn");
         healthText.textContent = "Degraded";
       }
-            // CPU/RAM anzeigen (Host)
+
+      // CPU/RAM anzeigen (Host)
       const cpuEl = document.getElementById("health-cpu");
       const ramEl = document.getElementById("health-ram");
 
@@ -652,7 +658,6 @@
       } else {
         ramEl.textContent = "–";
       }
-
     });
 
     // status.json payloads (clients/logins)
@@ -675,29 +680,27 @@
       }
     });
 
-      socket.on("live_clients", (payload) => {
-  if (!payload || !Array.isArray(payload.clients)) return;
-  document.getElementById("last-update-text").textContent = nowStamp();
-      
+    socket.on("live_clients", (payload) => {
+      if (!payload || !Array.isArray(payload.clients)) return;
+      document.getElementById("last-update-text").textContent = nowStamp();
 
-  // 1) Leere Live-Updates nicht verwenden, wenn wir schon etwas anzeigen
-  if (payload.clients.length === 0 && Array.isArray(lastClients) && lastClients.length > 0) {
-    return;
-  }
+      // 1) Leere Live-Updates nicht verwenden, wenn wir schon etwas anzeigen
+      if (payload.clients.length === 0 && Array.isArray(lastClients) && lastClients.length > 0) {
+        return;
+      }
 
-  // 2) Live-Modus erst aktivieren, wenn wirklich Live-Daten da sind
-  if (payload.clients.length > 0) {
-    liveMode = true;
-  }
+      // 2) Live-Modus erst aktivieren, wenn wirklich Live-Daten da sind
+      if (payload.clients.length > 0) {
+        liveMode = true;
+      }
 
-  // 3) Nur überschreiben, wenn es Sinn ergibt
-  if (payload.clients.length > 0 || !lastClients || lastClients.length === 0) {
-    lastClients = payload.clients;
-    renderClients(lastClients);
-    document.getElementById("kpi-clients").textContent = String(lastClients.length);
-  }
-});
-
+      // 3) Nur überschreiben, wenn es Sinn ergibt
+      if (payload.clients.length > 0 || !lastClients || lastClients.length === 0) {
+        lastClients = payload.clients;
+        renderClients(lastClients);
+        document.getElementById("kpi-clients").textContent = String(lastClients.length);
+      }
+    });
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
