@@ -331,7 +331,16 @@ class LiveObserver:
 
                         print(f"[observer] RX line: {s}")
 
-                        if "@" in s:
+                        # --- Pilot Disconnect ---
+                        if s.startswith("#DP"):
+                            callsign = s[3:].split(":", 1)[0].strip()
+                            with self.lock:
+                                removed = self.clients.pop(callsign, None)
+                            print(f"[observer] pilot removed via #DP: {callsign} (was_present={removed is not None})")
+                            continue
+
+                        # --- Pilot Position ---
+                        if s.startswith("@"):
                             obj = parse_position_line(s)
                             if obj:
                                 self.update_client(obj)
