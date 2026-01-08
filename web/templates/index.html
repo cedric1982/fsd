@@ -279,10 +279,6 @@
   text-align: right;
 }
 
-.col-center {
-  text-align: center;
-  vertical-align: middle;
-}
     
     /* Responsive */
     @media (max-width: 992px){
@@ -381,7 +377,7 @@
               <div class="table-wrap">
                 <table class="table table-darkish table-hover align-middle">
                   <thead>
-                    <tr>
+                    <tr class="col-center">
                       <th>Callsign</th>
                       <th class="text-end">HDG</th>
                       <th>Latitude</th>
@@ -390,7 +386,7 @@
                     </tr>
                   </thead>
                   <tbody id="clients-body">
-                    <tr>
+                    <tr class="col-center">
                       <td colspan="5">
                         <div class="empty">Keine aktiven Clients</div>
                       </td>
