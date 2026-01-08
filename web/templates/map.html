@@ -169,7 +169,7 @@
 
     // Aircraft-Icon (SVG-Datei aus deinem Projekt)
     // Pfad ist relativ zu map.html (bei /map ausgeliefert): /assets/icons/a320.svg
-    const AIRCRAFT_ICON_URL = "assets/icons/a320.svg";
+    const AIRCRAFT_ICON_URL = "/static/icons/a320.svg";
 
     // Falls dein SVG nicht nach Norden zeigt, hier korrigieren (häufig: -90 oder +90)
     const ICON_HEADING_OFFSET_DEG = 0;
@@ -182,7 +182,7 @@
 
       const html = `
         <div class="aircraft-wrapper" style="transform: rotate(${rotated}deg);">
-          <img src="${AIRCRAFT_ICON_URL}" class="aircraft-icon" alt="" />
+          <img src="${AIRCRAFT_ICON_URL}" class="aircraft-icon">
           ${labelHtml}
         </div>
       `;
