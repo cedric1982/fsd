@@ -30,6 +30,9 @@ STATUS_FILE = LOG_DIR / "status.json"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 last_mtime = 0
 
+LIVE_CACHE_LOCK = threading.Lock()
+LIVE_CACHE = {"clients": [], "ts": 0}
+
 
 app = Flask(__name__)
 # Session benötigt secret_key (bitte nicht leer lassen)
@@ -318,7 +321,9 @@ LIVE_PUSH_TOKEN = os.environ.get("FSD_PUSH_TOKEN", "my-super-secret-token")
 @app.route("/api/live_update", methods=["POST"])
 def live_update():
     data = request.get_json(force=True, silent=True) or {}
-
+    with LIVE_CACHE_LOCK:
+        LIVE_CACHE["clients"] = data.get("clients", [])
+        LIVE_CACHE["ts"] = data.get("ts", int(time.time()))
     print("live_update keys:", list(data.keys()))
     if "clients" in data and data["clients"]:
         print("sample client:", data["clients"][0])
@@ -332,7 +337,11 @@ def live_update():
 def map_view():
     return render_template("map.html")
 
-
+# --- snapshot für karte ---
+@app.route("/api/live_snapshot")
+def api_live_snapshot():
+    with LIVE_CACHE_LOCK:
+        return jsonify(LIVE_CACHE)
 
 
 # --- Benutzer anzeigen ---
