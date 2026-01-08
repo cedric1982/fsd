@@ -86,7 +86,12 @@ def unpack_pbh(pbh_u32: int) -> Dict[str, Any]:
 # =============================================================================
 def parse_position_line(line: str) -> Optional[Dict[str, Any]]:
     """
-    Erwartetes Format:
+    Unterstützte Formate:
+
+    (A) Classic FSD (wie in fsd/clinterface.cpp sendpilotpos):
+      @IDENTFLAG:CALLSIGN:TRANSPONDER:RATING:LAT:LON:ALT:GS:PBH:FLAGS
+
+    (B) Legacy/alt (dein bisheriges Erwartungsformat):
       @CALLSIGN:SQUAWK:TYPE:LAT:LON:ALT:GS:PBH:VS
     """
     if "@" not in line:
@@ -100,41 +105,86 @@ def parse_position_line(line: str) -> Optional[Dict[str, Any]]:
     if len(parts) < 9:
         return None
 
-    callsign = parts[0].strip()
-    squawk = parts[1].strip()
-    ctype = parts[2].strip()
+    # --- Versuch A: Classic FSD Format (10 Felder) ---
+    # IDENTFLAG ist oft ein einzelner Buchstabe (z.B. "P"), Callsign ist Text,
+    # LAT ist float etc.
+    if len(parts) >= 10:
+        identflag = parts[0].strip()
+        callsign = parts[1].strip()
+        try:
+            squawk = str(int(parts[2].strip()))
+            # rating = int(parts[3])  # optional
+            lat = float(parts[4])
+            lon = float(parts[5])
+            alt = int(float(parts[6]))
+            gs  = int(float(parts[7]))
+            pbh_raw = int(float(parts[8]))
+            # flags = int(parts[9])  # optional
+            vs = 0  # im Classic-Pilotpos nicht enthalten
+        except ValueError:
+            # falls es doch nicht passt, unten Fallback probieren
+            identflag = None
+        else:
+            decoded = unpack_pbh(pbh_raw)
+            return {
+                "callsign": callsign,
+                "squawk": squawk,
+                "type": identflag,     # für Anzeige im Dashboard
+                "lat": lat,
+                "lon": lon,
+                "alt": alt,
+                "gs": gs,
+                "vs": vs,
 
-    try:
-        lat = float(parts[3])
-        lon = float(parts[4])
-        alt = int(float(parts[5]))
-        gs  = int(float(parts[6]))
-        pbh_raw = int(float(parts[7]))
-        vs  = int(float(parts[8]))
-    except ValueError:
-        return None
+                "pbh_u32": decoded["pbh_u32"],
+                "hdg_deg": round(decoded["heading_deg"], 2),
+                "hdg_deg_round": decoded["heading_deg_rounded"],
+                "pitch_deg": decoded["pitch_deg"],
+                "bank_deg": decoded["bank_deg"],
+                "on_ground": decoded["on_ground"],
 
-    decoded = unpack_pbh(pbh_raw)
+                "ts": int(time.time())
+            }
 
-    return {
-        "callsign": callsign,
-        "squawk": squawk,
-        "type": ctype,
-        "lat": lat,
-        "lon": lon,
-        "alt": alt,
-        "gs": gs,
-        "vs": vs,
+    # --- Versuch B: Legacy Format (deine alte Erwartung) ---
+    if len(parts) >= 9:
+        callsign = parts[0].strip()
+        squawk = parts[1].strip()
+        ctype = parts[2].strip()
 
-        "pbh_u32": decoded["pbh_u32"],
-        "hdg_deg": round(decoded["heading_deg"], 2),
-        "hdg_deg_round": decoded["heading_deg_rounded"],
-        "pitch_deg": decoded["pitch_deg"],
-        "bank_deg": decoded["bank_deg"],
-        "on_ground": decoded["on_ground"],
+        try:
+            lat = float(parts[3])
+            lon = float(parts[4])
+            alt = int(float(parts[5]))
+            gs  = int(float(parts[6]))
+            pbh_raw = int(float(parts[7]))
+            vs  = int(float(parts[8]))
+        except ValueError:
+            return None
 
-        "ts": int(time.time())
-    }
+        decoded = unpack_pbh(pbh_raw)
+        return {
+            "callsign": callsign,
+            "squawk": squawk,
+            "type": ctype,
+            "lat": lat,
+            "lon": lon,
+            "alt": alt,
+            "gs": gs,
+            "vs": vs,
+
+            "pbh_u32": decoded["pbh_u32"],
+            "hdg_deg": round(decoded["heading_deg"], 2),
+            "hdg_deg_round": decoded["heading_deg_rounded"],
+            "pitch_deg": decoded["pitch_deg"],
+            "bank_deg": decoded["bank_deg"],
+            "on_ground": decoded["on_ground"],
+
+            "ts": int(time.time())
+        }
+
+    return None
+
 
 # =============================================================================
 # HTTP Push
