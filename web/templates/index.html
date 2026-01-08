@@ -387,7 +387,7 @@
                   </thead>
                   <tbody id="clients-body">
                     <tr>
-                      <td colspan="6">
+                      <td colspan="5">
                         <div class="empty">Keine aktiven Clients</div>
                       </td>
                     </tr>
@@ -556,7 +556,7 @@
       if (!filtered.length){
         tbody.innerHTML = `
           <tr>
-            <td colspan="6"><div class="empty">Keine aktiven Clients</div></td>
+            <td colspan="5"><div class="empty">Keine aktiven Clients</div></td>
           </tr>`;
         document.getElementById("kpi-clients").textContent = "0";
         return;
@@ -567,14 +567,14 @@
       tbody.innerHTML = filtered.map(c => `
         <tr>
           <td><span class="badge-soft">${c.callsign || "-"}</span></td>
-          <td><span class="badge-soft">
+          <td class="text-end"><span class="badge-soft">
               ${typeof c.hdg_deg === "number"
               ? `${Math.round(c.hdg_deg)}°`
               : "-"}
           </span></td>
           <td><span class="badge-soft">${Number.parseFloat(c.lat ?? 0).toFixed(6)}</span></td>
           <td><span class="badge-soft">${Number.parseFloat(c.lon ?? 0).toFixed(6)}</span></td>
-          <td><span class="badge-soft">${c.alt ?? "-"}</span></td>
+          <td class="text-end"><span class="badge-soft">${c.alt ?? "-"}</span></td>
         </tr>
       `).join("");
     }
