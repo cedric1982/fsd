@@ -327,6 +327,12 @@ def live_update():
     return {"ok": True}
 
 
+# --- Karte hinzugefügt ---
+@app.route("/map")
+def map_view():
+    return render_template("map.html")
+
+
 
 
 # --- Benutzer anzeigen ---
