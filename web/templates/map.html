@@ -84,11 +84,23 @@
     .leaflet-popup-tip { background: #0f1523; }
 
     /* --- Aircraft Icon (rotierbar) --- */
-    .aircraft-icon {
+    .aircraft-wrapper{
       width: 28px;
       height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transform-origin: 50% 50%;
       will-change: transform;
+    }
+
+    /* Das SVG wird als <img> geladen; Größe über CSS */
+    .aircraft-icon{
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
     }
 
     /* Optional: Callsign-Label unter dem Icon */
@@ -100,13 +112,6 @@
       text-shadow: 0 1px 2px rgba(0,0,0,.8);
       white-space: nowrap;
       pointer-events: none;
-    }
-
-    .aircraft-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transform: translate(-50%, -50%); /* zentriert auf LatLng */
     }
 
     @media (max-width: 992px){
@@ -138,7 +143,7 @@
 
   <script>
     // Karte
-    const map = L.map('map', { worldCopyJump: true, zoomSnap: 0.5, soomDelta: 0.5 }).setView([20, 0], 2);
+    const map = L.map('map', { worldCopyJump: true, zoomSnap: 0.5, zoomDelta: 0.5 }).setView([20, 0], 2);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -162,43 +167,31 @@
       `;
     }
 
-    // SVG: einfacher "Pfeil/Flieger" nach oben (Norden). Rotation passiert per CSS transform.
-    function aircraftSvg() {
-      return `
-        <svg class="aircraft-icon" viewBox="0 0 64 64" aria-hidden="true">
-          <path d="M32 2
-                   L38 26
-                   L58 34
-                   L58 40
-                   L38 38
-                   L36 62
-                   L28 62
-                   L26 38
-                   L6 40
-                   L6 34
-                   L26 26
-                   Z"
-                fill="white" fill-opacity="0.92"/>
-        </svg>
-      `;
-    }
+    // Aircraft-Icon (SVG-Datei aus deinem Projekt)
+    // Pfad ist relativ zu map.html (bei /map ausgeliefert): /assets/icons/a320.svg
+    const AIRCRAFT_ICON_URL = "assets/icons/a320.svg";
 
-    function makeAircraftDivIcon(headingDeg) {
+    // Falls dein SVG nicht nach Norden zeigt, hier korrigieren (häufig: -90 oder +90)
+    const ICON_HEADING_OFFSET_DEG = 0;
+
+    function makeAircraftDivIcon(headingDeg, callsign = "") {
       const safeHdg = Number.isFinite(headingDeg) ? headingDeg : 0;
+      const rotated = safeHdg + ICON_HEADING_OFFSET_DEG;
+
+      const labelHtml = callsign ? `<div class="aircraft-label">${callsign}</div>` : "";
 
       const html = `
-        <div class="aircraft-wrapper">
-          <div style="transform: rotate(${safeHdg}deg);">
-            ${aircraftSvg()}
-          </div>
+        <div class="aircraft-wrapper" style="transform: rotate(${rotated}deg);">
+          <img src="${AIRCRAFT_ICON_URL}" class="aircraft-icon" alt="" />
+          ${labelHtml}
         </div>
       `;
 
       return L.divIcon({
         className: "",
         html,
-        iconSize: [1, 1],
-        iconAnchor: [0, 0]
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
       });
     }
 
@@ -223,7 +216,7 @@
 
         if (!marker) {
           marker = L.marker(latlng, {
-            icon: makeAircraftDivIcon(hdg),
+            icon: makeAircraftDivIcon(hdg, callsign),
             keyboard: false
           }).addTo(map);
 
@@ -233,7 +226,7 @@
           marker.setLatLng(latlng);
 
           // Icon aktualisieren, wenn sich Heading ändert
-          marker.setIcon(makeAircraftDivIcon(hdg));
+          marker.setIcon(makeAircraftDivIcon(hdg, callsign));
           marker.setPopupContent(popupHtml(c));
         }
       }
