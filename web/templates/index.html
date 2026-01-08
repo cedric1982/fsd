@@ -379,7 +379,6 @@
                   <thead>
                     <tr>
                       <th>Callsign</th>
-                      <th>Typ</th>
                       <th class="text-end">HDG</th>
                       <th>Latitude</th>
                       <th>Longitude</th>
@@ -568,7 +567,6 @@
       tbody.innerHTML = filtered.map(c => `
         <tr>
           <td><span class="badge-soft">${c.callsign || "-"}</span></td>
-          <td><span class="badge-soft">${c.type || "-"}</span></td>
           <td class="text-end">
               ${typeof c.hdg_deg === "number"
               ? `${Math.round(c.hdg_deg)}°`
