@@ -279,6 +279,10 @@
   text-align: right;
 }
 
+.col-center {
+  text-align: center;
+  vertical-align: middle;
+}
     
     /* Responsive */
     @media (max-width: 992px){
@@ -565,18 +569,37 @@
       document.getElementById("kpi-clients").textContent = String(filtered.length);
 
       tbody.innerHTML = filtered.map(c => `
-        <tr>
-          <td><span class="badge-soft">${c.callsign || "-"}</span></td>
-          <td class="text-end"><span class="badge-soft">
-              ${typeof c.hdg_deg === "number"
-              ? `${Math.round(c.hdg_deg)}°`
-              : "-"}
-          </span></td>
-          <td><span class="badge-soft">${Number.parseFloat(c.lat ?? 0).toFixed(6)}</span></td>
-          <td><span class="badge-soft">${Number.parseFloat(c.lon ?? 0).toFixed(6)}</span></td>
-          <td class="text-end"><span class="badge-soft">${c.alt ?? "-"}</span></td>
-        </tr>
-      `).join("");
+          <tr>
+            <td class="col-center">
+              <span class="badge-soft">${c.callsign || "-"}</span>
+            </td>
+        
+            <td class="col-center">
+              <span class="badge-soft">
+                ${typeof c.hdg_deg === "number"
+                  ? `${Math.round(c.hdg_deg)}°`
+                  : "-"}
+              </span>
+            </td>
+        
+            <td class="col-center">
+              <span class="badge-soft">
+                ${Number.parseFloat(c.lat ?? 0).toFixed(6)}
+              </span>
+            </td>
+        
+            <td class="col-center">
+              <span class="badge-soft">
+                ${Number.parseFloat(c.lon ?? 0).toFixed(6)}
+              </span>
+            </td>
+        
+            <td class="col-center">
+              <span class="badge-soft">${c.alt ?? "-"}</span>
+            </td>
+          </tr>
+        `).join("");
+
     }
 
     function renderLogins(logins){
