@@ -275,6 +275,23 @@ class LiveObserver:
         sock.sendall(wire)
         print(f"[observer] sent login: {line}")
 
+    def _send_atc_position(self, sock: socket.socket):
+        # Werte kannst du später via ENV konfigurierbar machen
+        freq = 0            # egal für Observer
+        facility = 0        # 0 = OBS/DEL (für Observer egal)
+        visualrange = 99999 # groß genug, damit du alle Piloten siehst
+        rating = 1          # egal
+
+        lat = 0.0
+        lon = 0.0
+        alt = 0
+
+        line = f"%{FSD_CALLSIGN}:{freq}:{facility}:{visualrange}:{rating}:{lat:.5f}:{lon:.5f}:{alt}"
+        sock.sendall((line + "\r\n").encode("utf-8", errors="ignore"))
+        print(f"[observer] sent atcpos: {line}")
+
+    
+    
     def run(self):
         threading.Thread(target=self.push_loop, daemon=True).start()
 
@@ -289,6 +306,7 @@ class LiveObserver:
                 sock.settimeout(None)
 
                 self._send_login(sock)
+                self._send_atc_position(sock)
                 print("[observer] tcp connected, waiting for server feed...")
 
                 # nach erfolgreichem Connect Backoff zurücksetzen
