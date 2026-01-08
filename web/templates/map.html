@@ -178,12 +178,9 @@
       const safeHdg = Number.isFinite(headingDeg) ? headingDeg : 0;
       const rotated = safeHdg + ICON_HEADING_OFFSET_DEG;
 
-      const labelHtml = callsign ? `<div class="aircraft-label">${callsign}</div>` : "";
-
       const html = `
         <div class="aircraft-wrapper" style="transform: rotate(${rotated}deg);">
           <img src="${AIRCRAFT_ICON_URL}" class="aircraft-icon">
-          ${labelHtml}
         </div>
       `;
 
