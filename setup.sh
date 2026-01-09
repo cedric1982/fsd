@@ -2,23 +2,20 @@
 set -euo pipefail
 
 # ===============================================================
-#  FSD INSTALLER - Single File
-#  - Default: start Textual TUI (orange) + password modal
-#  - Then re-invoke this same script in CORE mode
+#  FSD SETUP - SINGLE FILE INSTALLER WITH TUI
 # ===============================================================
 
 SCRIPT_PATH="$(readlink -f "$0")"
 BASE_DIR="$(dirname "$SCRIPT_PATH")"
 
-export BASE_DIR
 export FSD_SCRIPT_PATH="$SCRIPT_PATH"
 export FSD_BASE_DIR="$BASE_DIR"
 
-MODE="${FSD_MODE:-tui}"   # "tui" or "core"
+MODE="${FSD_MODE:-tui}"   # tui | core
 
-# -------------------------------
-# CORE INSTALLER (deine Logik)
-# -------------------------------
+# ===============================================================
+# CORE INSTALLER (deine eigentliche Installation)
+# ===============================================================
 core_install() {
   set -euo pipefail
 
@@ -34,334 +31,184 @@ core_install() {
   NC='\033[0m'
 
   echo -e "${YELLOW}=============================================${NC}"
-  echo -e "${YELLOW}🚀 Starte FSD-Server Installation...${NC}"
-  echo -e "${YELLOW}   BASE_DIR: $BASE_DIR${NC}"
-  echo -e "${YELLOW}=============================================${NC}\n"
+  echo -e "${YELLOW}🚀 Starte FSD Installation${NC}"
+  echo -e "${YELLOW}=============================================${NC}"
 
-  # Optional: sudo früh validieren, damit später keine "hängenden" Prompts kommen
   sudo -v
 
-  # 1. System vorbereiten
-  echo -e "${GREEN}🔧 Aktualisiere System...${NC}"
+  echo -e "${GREEN}🔧 System aktualisieren...${NC}"
   sudo apt update -y
   sudo apt upgrade -y
 
-  echo -e "${GREEN}🧱 Installiere benötigte Systempakete...${NC}"
+  echo -e "${GREEN}📦 Pakete installieren...${NC}"
   sudo apt install -y \
     build-essential cmake sqlite3 libsqlite3-dev \
     python3 python3-venv python3-pip \
     git nano curl unzip libjsoncpp-dev
 
-  # 2. Verzeichnisse anlegen
-  echo -e "${GREEN}📁 Erstelle benötigte Verzeichnisse...${NC}"
+  echo -e "${GREEN}📁 Verzeichnisse anlegen...${NC}"
   mkdir -p "$LOG_DIR" "$WEB_DIR" "$UNIX_DIR"
 
-  # 3. Virtuelle Umgebung erstellen
-  echo -e "${GREEN}🐍 Erstelle Python venv unter: $VENV_DIR${NC}"
-  rm -rf "$VENV_DIR" 2>/dev/null || true
+  echo -e "${GREEN}🐍 Python venv erstellen...${NC}"
+  rm -rf "$VENV_DIR"
   python3 -m venv "$VENV_DIR"
-
-  if [ ! -d "$VENV_DIR" ]; then
-    echo -e "${RED}❌ Virtuelle Umgebung konnte nicht erstellt werden!${NC}"
-    exit 1
-  fi
-
-  # Aktivieren
-  # shellcheck disable=SC1090
   source "$VENV_DIR/bin/activate"
 
-  # 4. Python-Pakete installieren
-  echo -e "${GREEN}📚 Installiere Flask, psutil & flask-cors...${NC}"
+  echo -e "${GREEN}📚 Python Pakete installieren...${NC}"
   pip install --upgrade pip
   pip install flask psutil flask-cors flask-socketio eventlet werkzeug
 
-  # 5. FSD kompilieren (CMake)
-  echo -e "${GREEN}🧩 Kompiliere FSD Server mit SQLite-Unterstützung...${NC}"
-  cd "$BASE_DIR"
-
-  rm -rf "$BASE_DIR/build" 2>/dev/null || true
-  mkdir -p "$BASE_DIR/build"
+  echo -e "${GREEN}🧩 FSD bauen (CMake)...${NC}"
+  rm -rf "$BASE_DIR/build"
+  mkdir "$BASE_DIR/build"
   cd "$BASE_DIR/build"
-
   cmake ..
   make -j"$(nproc)"
 
-  # Prüfen, ob fsd erfolgreich kompiliert wurde und in unix kopieren
-  if [ -f "$BASE_DIR/build/fsd" ]; then
-    echo -e "${GREEN}✅ FSD erfolgreich kompiliert, kopiere nach unix/...${NC}"
-    cp "$BASE_DIR/build/fsd" "$UNIX_DIR/fsd"
-    chmod +x "$UNIX_DIR/fsd"
-  else
-    echo -e "${RED}❌ Fehler: fsd wurde nicht im build-Ordner gefunden!${NC}"
+  if [[ ! -f fsd ]]; then
+    echo -e "${RED}❌ Build fehlgeschlagen${NC}"
     exit 1
   fi
 
+  cp fsd "$UNIX_DIR/fsd"
+  chmod +x "$UNIX_DIR/fsd"
   rm -rf "$BASE_DIR/build"
-  echo -e "${GREEN}✅ FSD Server erfolgreich gebaut.${NC}"
 
-  # 6. SQLite-Datenbank für Benutzer erstellen
-  echo -e "${GREEN}🗃️ Erstelle SQLite-Datenbank für Benutzer (cert.sqlitedb3)...${NC}"
+  echo -e "${GREEN}🗃️ SQLite DB erstellen...${NC}"
   rm -f "$DB_PATH"
-
   sqlite3 "$DB_PATH" <<'SQL'
 CREATE TABLE IF NOT EXISTS cert (
-    cid TEXT PRIMARY KEY NOT NULL,
-    password TEXT NOT NULL,
-    level INT NOT NULL,
-    twitch_name TEXT
+  cid TEXT PRIMARY KEY,
+  password TEXT NOT NULL,
+  level INT NOT NULL,
+  twitch_name TEXT
 );
-
-INSERT OR REPLACE INTO cert (cid, password, level, twitch_name)
-VALUES ('1000001', 'observer', 99, 'Observer');
-
-INSERT OR REPLACE INTO cert (cid, password, level, twitch_name)
-VALUES ('1000002', 'test123', 1, 'TestTwitch');
+INSERT OR REPLACE INTO cert VALUES ('1000001','observer',99,'Observer');
+INSERT OR REPLACE INTO cert VALUES ('1000002','test123',1,'TestTwitch');
 SQL
-
   chmod 644 "$DB_PATH"
-  echo -e "${GREEN}✅ Datenbank erstellt und Benutzer hinzugefügt: $DB_PATH${NC}"
 
-  # 7. Logs anlegen
-  echo -e "${GREEN}🧾 Lege Logfiles an...${NC}"
-  mkdir -p "$LOG_DIR"
-  touch "$LOG_DIR/debug.log" "$LOG_DIR/fsd_output.log"
+  echo -e "${GREEN}🔐 Admin Passwort setzen...${NC}"
 
-  # 8. Skripte ausführbar machen
-  if [ -f "$BASE_DIR/fsd_manager.sh" ]; then
-    chmod +x "$BASE_DIR/fsd_manager.sh"
-    echo -e "${GREEN}✅ fsd_manager.sh ist ausführbar.${NC}"
-  else
-    echo -e "${YELLOW}⚠️ fsd_manager.sh nicht gefunden!${NC}"
-  fi
-
-  if [ -f "$WEB_DIR/app.py" ]; then
-    chmod +x "$WEB_DIR/app.py"
-    echo -e "${GREEN}✅ app.py ist ausführbar.${NC}"
-  else
-    echo -e "${YELLOW}⚠️ app.py nicht gefunden!${NC}"
-  fi
-
-  # 9. Ownership/Berechtigungen
-  echo -e "${GREEN}🔑 Setze Berechtigungen...${NC}"
-  sudo chown -R "$USER:$USER" "$BASE_DIR"
-  sudo chmod -R 755 "$BASE_DIR"
-
-  # 10. Admin Passwort (per TUI-Modal oder Fallback)
-  echo -e "\n${YELLOW}🔐 Admin-Passwort für Benutzerverwaltung setzen${NC}"
-
-  if [[ -n "${FSD_ADMIN_PW:-}" && -n "${FSD_ADMIN_PW2:-}" ]]; then
-    ADMIN_PW="$FSD_ADMIN_PW"
-    ADMIN_PW2="$FSD_ADMIN_PW2"
-  else
-    read -s -p "Admin-Passwort: " ADMIN_PW; echo
-    read -s -p "Admin-Passwort wiederholen: " ADMIN_PW2; echo
-  fi
-
-  if [ "$ADMIN_PW" != "$ADMIN_PW2" ]; then
-    echo -e "${RED}❌ Passwörter stimmen nicht überein.${NC}"
+  if [[ -z "${FSD_ADMIN_PW:-}" ]]; then
+    echo "❌ Kein Passwort übergeben"
     exit 1
   fi
 
-  AUTH_FILE="$BASE_DIR/web/admin_auth.json"
-
+  AUTH_FILE="$WEB_DIR/admin_auth.json"
   python3 - <<PY
 import json
 from werkzeug.security import generate_password_hash
-pw = """$ADMIN_PW"""
-data = {"admin_password_hash": generate_password_hash(pw)}
+pw = """$FSD_ADMIN_PW"""
 with open("$AUTH_FILE","w") as f:
-    json.dump(data, f)
-print("✅ Admin-Hash geschrieben nach: $AUTH_FILE")
+    json.dump({"admin_password_hash": generate_password_hash(pw)}, f)
+print("Admin Hash geschrieben")
 PY
 
   chmod 600 "$AUTH_FILE"
   chown "$USER:$USER" "$AUTH_FILE"
 
-  # 11. Fertig
-  echo -e "\n${GREEN}🎉 Installation abgeschlossen!${NC}"
-  echo -e "---------------------------------------------"
-  echo -e "📦 FSD kompiliert mit SQLite-Unterstützung"
-  echo -e "🐍 Flask Umgebung installiert: $VENV_DIR"
-  echo -e "🗃️  Benutzer-Datenbank: $DB_PATH"
-  echo -e "🧭 Manager starten mit:"
-  echo -e "👉  bash \"$BASE_DIR/fsd_manager.sh\""
-  echo -e "---------------------------------------------"
-  echo -e "${YELLOW}Zum Starten:${NC}"
-  echo -e "👉  source \"$VENV_DIR/bin/activate\""
-  echo -e "👉  bash \"$BASE_DIR/fsd_manager.sh\""
-  echo -e "---------------------------------------------"
+  echo -e "${GREEN}🎉 Installation abgeschlossen${NC}"
 }
 
-# CORE mode: run the real installer
+# ---------------------------------------------------------------
+# CORE MODE
+# ---------------------------------------------------------------
 if [[ "$MODE" == "core" ]]; then
   core_install
   exit 0
 fi
 
-# -------------------------------
-# TUI bootstrap (nur 1 Datei insgesamt)
-# -------------------------------
+# ===============================================================
+# TUI BOOTSTRAP (temporär)
+# ===============================================================
 sudo apt update -y
 sudo apt install -y python3 python3-venv python3-pip
 
 TMP_DIR="$(mktemp -d)"
-cleanup() { rm -rf "$TMP_DIR" || true; }
-trap cleanup EXIT
+trap 'rm -rf "$TMP_DIR"' EXIT
 
-TUI_VENV="$TMP_DIR/.tui_venv"
-python3 -m venv "$TUI_VENV"
-# shellcheck disable=SC1090
-source "$TUI_VENV/bin/activate"
+python3 -m venv "$TMP_DIR/venv"
+source "$TMP_DIR/venv/bin/activate"
 pip install --upgrade pip >/dev/null
-pip install -U textual rich >/dev/null
+pip install textual rich >/dev/null
 
-TUI_APP="$TMP_DIR/tui_runner.py"
-
-cat > "$TUI_APP" <<'PY'
-import os
-import subprocess
-import threading
-
+cat > "$TMP_DIR/tui.py" <<'PY'
+import os, subprocess, threading
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical
 from textual.widgets import Header, Footer, Input, ListView, ListItem, Label, Static, RichLog, Button
+from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 
-STEPS = [
-    "System vorbereiten",
-    "Pakete installieren",
-    "Python venv + Pakete",
-    "Build (CMake/Make)",
-    "DB + Rechte",
-    "Admin Passwort",
-    "Fertig",
-]
-
 class PasswordModal(ModalScreen):
-    def compose(self) -> ComposeResult:
-        yield Static("Admin-Passwort setzen", id="modal_title")
-        yield Input(password=True, placeholder="Admin-Passwort", id="pw1")
-        yield Input(password=True, placeholder="Wiederholen", id="pw2")
-        with Horizontal(id="modal_buttons"):
-            yield Button("OK", id="ok", variant="primary")
+    def compose(self):
+        yield Static("Admin Passwort", id="title")
+        yield Input(password=True, placeholder="Passwort", id="p1")
+        yield Input(password=True, placeholder="Wiederholen", id="p2")
+        with Horizontal():
+            yield Button("OK", id="ok")
             yield Button("Abbrechen", id="cancel")
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "cancel":
-            self.app.exit(return_code=1)
+    def on_button_pressed(self, e):
+        if e.button.id == "cancel":
+            self.dismiss(None)
             return
-        pw1 = self.query_one("#pw1", Input).value
-        pw2 = self.query_one("#pw2", Input).value
-        if not pw1 or pw1 != pw2:
-            self.query_one("#modal_title", Static).update("Passwörter stimmen nicht überein.")
+        p1 = self.query_one("#p1").value
+        p2 = self.query_one("#p2").value
+        if not p1 or p1 != p2:
+            self.query_one("#title").update("❌ Passwörter stimmen nicht")
             return
-        self.dismiss((pw1, pw2))
+        self.dismiss(p1)
 
-class DetailBox(Static):
-    pass
-
-class InstallerTUI(App):
+class Installer(App):
     CSS = """
-    Screen { background: #0b1b1f; color: #d7e3e7; }
-    $accent: #ff8c1a;
-
-    Input { border: tall $accent; background: #061317; color: #d7e3e7; }
-
-    #layout { height: 1fr; }
-
-    #left { width: 30%; min-width: 26; border: tall $accent; background: #061317; }
-    #right { width: 70%; }
-
-    #details { height: 7; border: tall $accent; background: #061317; padding: 1 2; }
-    #logs { border: tall $accent; background: #061317; padding: 1 2; }
-
-    ListView { background: #061317; }
-    ListItem.-highlight { background: $accent; color: #081316; }
-
-    Footer { background: #061317; }
-
-    PasswordModal { align: center middle; }
-    PasswordModal > * { width: 70; border: tall $accent; background: #061317; padding: 1 2; }
-    #modal_buttons { height: auto; align: center middle; padding-top: 1; }
-    Button { margin: 0 1; }
+    Screen { background:#0b1b1f; color:#d7e3e7; }
+    $accent:#ff8c1a;
+    #left { width:30%; border: tall $accent; }
+    #right { width:70%; }
+    RichLog { border: tall $accent; }
     """
 
-    BINDINGS = [
-        ("q", "quit", "Quit"),
-        ("/", "focus_search", "Search"),
-    ]
-
-    def compose(self) -> ComposeResult:
-        yield Header(show_clock=True)
-        yield Input(placeholder="Search (Ctrl+F or /)", id="search")
-        with Horizontal(id="layout"):
+    def compose(self):
+        yield Header()
+        with Horizontal():
             with Vertical(id="left"):
-                yield Label("Steps", id="left_title")
-                yield ListView(*[ListItem(Label(s)) for s in STEPS], id="step_list")
+                yield Label("Setup")
+                yield ListView(
+                    ListItem(Label("Install")),
+                )
             with Vertical(id="right"):
-                yield DetailBox(id="details")
-                yield RichLog(highlight=True, markup=True, id="logs")
+                yield RichLog(id="log")
         yield Footer()
 
-    async def on_mount(self) -> None:
-        self.query_one("#step_list", ListView).index = 0
-        self._render_details(0)
+    def on_mount(self):
+        self.push_screen(PasswordModal(), self._got_pw)
 
-        log = self.query_one("#logs", RichLog)
-        log.write("[b]Installer Logs[/b]")
-        log.write("Passwort wird abgefragt...")
+    def _got_pw(self, pw):
+        if not pw:
+            self.exit(1)
+        log = self.query_one("#log")
+        log.write("Starte Installation…")
 
-        pw1, pw2 = await self.push_screen_wait(PasswordModal())
+        def run():
+            env = os.environ.copy()
+            env["FSD_MODE"] = "core"
+            env["FSD_ADMIN_PW"] = pw
+            p = subprocess.Popen(
+                [env["FSD_SCRIPT_PATH"]],
+                cwd=env["FSD_BASE_DIR"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                env=env,
+            )
+            for l in p.stdout:
+                self.call_from_thread(log.write, l.rstrip())
+            self.call_from_thread(log.write, "Fertig.")
 
-        log.write("[orange1]Starte Installation...[/orange1]")
+        threading.Thread(target=run, daemon=True).start()
 
-        t = threading.Thread(target=self._run_installer, args=(pw1, pw2), daemon=True)
-        t.start()
-
-    def _render_details(self, idx: int) -> None:
-        box = self.query_one("#details", DetailBox)
-        box.update(
-            "[b]Details[/b]\n"
-            f"Step: {STEPS[idx]}\n"
-            "Status: [green]running[/green]\n"
-            f"Script: {os.environ.get('FSD_SCRIPT_PATH','(unknown)')}"
-        )
-
-    def _run_installer(self, pw1: str, pw2: str) -> None:
-        log = self.query_one("#logs", RichLog)
-
-        env = os.environ.copy()
-        env["FSD_MODE"] = "core"
-        env["FSD_ADMIN_PW"] = pw1
-        env["FSD_ADMIN_PW2"] = pw2
-
-        script = env["FSD_SCRIPT_PATH"]
-        base_dir = env["FSD_BASE_DIR"]
-
-        proc = subprocess.Popen(
-            [script],
-            cwd=base_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            env=env,
-        )
-
-        for line in proc.stdout:
-            self.call_from_thread(log.write, line.rstrip("\n"))
-
-        rc = proc.wait()
-        if rc == 0:
-            self.call_from_thread(log.write, "[green]Installation abgeschlossen.[/green]")
-        else:
-            self.call_from_thread(log.write, f"[red]Installation fehlgeschlagen (Exit {rc}).[/red]")
-
-    def action_focus_search(self) -> None:
-        self.query_one("#search", Input).focus()
-
-if __name__ == "__main__":
-    InstallerTUI().run()
+Installer().run()
 PY
 
-python3 "$TUI_APP"
+python3 "$TMP_DIR/tui.py"
