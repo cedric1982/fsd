@@ -1,95 +1,211 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ============================================================
-# Single-file Installer:
-# - Default: starts TUI (Textual) + asks admin password via modal
-# - Then re-invokes itself in CORE mode to run the actual install
-# ============================================================
+# ===============================================================
+#  FSD INSTALLER - Single File
+#  - Default: start Textual TUI (orange) + password modal
+#  - Then re-invoke this same script in CORE mode
+# ===============================================================
 
 SCRIPT_PATH="$(readlink -f "$0")"
 BASE_DIR="$(dirname "$SCRIPT_PATH")"
 
-MODE="${FSD_MODE:-tui}"   # "tui" or "core"
 export BASE_DIR
+export FSD_SCRIPT_PATH="$SCRIPT_PATH"
+export FSD_BASE_DIR="$BASE_DIR"
 
-# ---------- CORE INSTALLER (your real installation logic) ----------
+MODE="${FSD_MODE:-tui}"   # "tui" or "core"
+
+# -------------------------------
+# CORE INSTALLER (deine Logik)
+# -------------------------------
 core_install() {
-  # Optional: keep your colors if you have them
-  YELLOW="\033[1;33m"; RED="\033[1;31m"; GREEN="\033[1;32m"; NC="\033[0m"
+  set -euo pipefail
 
-  echo -e "${YELLOW}==> Core installer started${NC}"
-  cd "$BASE_DIR"
+  LOG_DIR="$BASE_DIR/logs"
+  WEB_DIR="$BASE_DIR/web"
+  UNIX_DIR="$BASE_DIR/unix"
+  VENV_DIR="$BASE_DIR/venv"
+  DB_PATH="$UNIX_DIR/cert.sqlitedb3"
 
-  # ---- Example: minimal structure. Replace with YOUR existing steps. ----
-  # IMPORTANT: keep sudo usage as needed. If you want sudo validated early:
-  # sudo -v
+  GREEN='\033[0;32m'
+  YELLOW='\033[1;33m'
+  RED='\033[0;31m'
+  NC='\033[0m'
 
-  # 1) update/upgrade
+  echo -e "${YELLOW}=============================================${NC}"
+  echo -e "${YELLOW}🚀 Starte FSD-Server Installation...${NC}"
+  echo -e "${YELLOW}   BASE_DIR: $BASE_DIR${NC}"
+  echo -e "${YELLOW}=============================================${NC}\n"
+
+  # Optional: sudo früh validieren, damit später keine "hängenden" Prompts kommen
+  sudo -v
+
+  # 1. System vorbereiten
+  echo -e "${GREEN}🔧 Aktualisiere System...${NC}"
   sudo apt update -y
   sudo apt upgrade -y
 
-  # 2) install packages (example)
-  sudo apt install -y build-essential cmake sqlite3 libsqlite3-dev python3 python3-venv python3-pip git nano curl unzip libjsoncpp-dev
+  echo -e "${GREEN}🧱 Installiere benötigte Systempakete...${NC}"
+  sudo apt install -y \
+    build-essential cmake sqlite3 libsqlite3-dev \
+    python3 python3-venv python3-pip \
+    git nano curl unzip libjsoncpp-dev
 
-  # 3) directories, builds, etc...
-  mkdir -p "$BASE_DIR/logs" "$BASE_DIR/web" "$BASE_DIR/unix"
+  # 2. Verzeichnisse anlegen
+  echo -e "${GREEN}📁 Erstelle benötigte Verzeichnisse...${NC}"
+  mkdir -p "$LOG_DIR" "$WEB_DIR" "$UNIX_DIR"
 
-  # ---------------------------------------------------------------------
-  # 10) Admin password - MUST come from ENV when running under TUI
-  # ---------------------------------------------------------------------
+  # 3. Virtuelle Umgebung erstellen
+  echo -e "${GREEN}🐍 Erstelle Python venv unter: $VENV_DIR${NC}"
+  rm -rf "$VENV_DIR" 2>/dev/null || true
+  python3 -m venv "$VENV_DIR"
+
+  if [ ! -d "$VENV_DIR" ]; then
+    echo -e "${RED}❌ Virtuelle Umgebung konnte nicht erstellt werden!${NC}"
+    exit 1
+  fi
+
+  # Aktivieren
+  # shellcheck disable=SC1090
+  source "$VENV_DIR/bin/activate"
+
+  # 4. Python-Pakete installieren
+  echo -e "${GREEN}📚 Installiere Flask, psutil & flask-cors...${NC}"
+  pip install --upgrade pip
+  pip install flask psutil flask-cors flask-socketio eventlet werkzeug
+
+  # 5. FSD kompilieren (CMake)
+  echo -e "${GREEN}🧩 Kompiliere FSD Server mit SQLite-Unterstützung...${NC}"
+  cd "$BASE_DIR"
+
+  rm -rf "$BASE_DIR/build" 2>/dev/null || true
+  mkdir -p "$BASE_DIR/build"
+  cd "$BASE_DIR/build"
+
+  cmake ..
+  make -j"$(nproc)"
+
+  # Prüfen, ob fsd erfolgreich kompiliert wurde und in unix kopieren
+  if [ -f "$BASE_DIR/build/fsd" ]; then
+    echo -e "${GREEN}✅ FSD erfolgreich kompiliert, kopiere nach unix/...${NC}"
+    cp "$BASE_DIR/build/fsd" "$UNIX_DIR/fsd"
+    chmod +x "$UNIX_DIR/fsd"
+  else
+    echo -e "${RED}❌ Fehler: fsd wurde nicht im build-Ordner gefunden!${NC}"
+    exit 1
+  fi
+
+  rm -rf "$BASE_DIR/build"
+  echo -e "${GREEN}✅ FSD Server erfolgreich gebaut.${NC}"
+
+  # 6. SQLite-Datenbank für Benutzer erstellen
+  echo -e "${GREEN}🗃️ Erstelle SQLite-Datenbank für Benutzer (cert.sqlitedb3)...${NC}"
+  rm -f "$DB_PATH"
+
+  sqlite3 "$DB_PATH" <<'SQL'
+CREATE TABLE IF NOT EXISTS cert (
+    cid TEXT PRIMARY KEY NOT NULL,
+    password TEXT NOT NULL,
+    level INT NOT NULL,
+    twitch_name TEXT
+);
+
+INSERT OR REPLACE INTO cert (cid, password, level, twitch_name)
+VALUES ('1000001', 'observer', 99, 'Observer');
+
+INSERT OR REPLACE INTO cert (cid, password, level, twitch_name)
+VALUES ('1000002', 'test123', 1, 'TestTwitch');
+SQL
+
+  chmod 644 "$DB_PATH"
+  echo -e "${GREEN}✅ Datenbank erstellt und Benutzer hinzugefügt: $DB_PATH${NC}"
+
+  # 7. Logs anlegen
+  echo -e "${GREEN}🧾 Lege Logfiles an...${NC}"
+  mkdir -p "$LOG_DIR"
+  touch "$LOG_DIR/debug.log" "$LOG_DIR/fsd_output.log"
+
+  # 8. Skripte ausführbar machen
+  if [ -f "$BASE_DIR/fsd_manager.sh" ]; then
+    chmod +x "$BASE_DIR/fsd_manager.sh"
+    echo -e "${GREEN}✅ fsd_manager.sh ist ausführbar.${NC}"
+  else
+    echo -e "${YELLOW}⚠️ fsd_manager.sh nicht gefunden!${NC}"
+  fi
+
+  if [ -f "$WEB_DIR/app.py" ]; then
+    chmod +x "$WEB_DIR/app.py"
+    echo -e "${GREEN}✅ app.py ist ausführbar.${NC}"
+  else
+    echo -e "${YELLOW}⚠️ app.py nicht gefunden!${NC}"
+  fi
+
+  # 9. Ownership/Berechtigungen
+  echo -e "${GREEN}🔑 Setze Berechtigungen...${NC}"
+  sudo chown -R "$USER:$USER" "$BASE_DIR"
+  sudo chmod -R 755 "$BASE_DIR"
+
+  # 10. Admin Passwort (per TUI-Modal oder Fallback)
   echo -e "\n${YELLOW}🔐 Admin-Passwort für Benutzerverwaltung setzen${NC}"
 
   if [[ -n "${FSD_ADMIN_PW:-}" && -n "${FSD_ADMIN_PW2:-}" ]]; then
     ADMIN_PW="$FSD_ADMIN_PW"
     ADMIN_PW2="$FSD_ADMIN_PW2"
   else
-    # Fallback, falls jemand core direkt startet
     read -s -p "Admin-Passwort: " ADMIN_PW; echo
     read -s -p "Admin-Passwort wiederholen: " ADMIN_PW2; echo
   fi
 
-  if [[ "$ADMIN_PW" != "$ADMIN_PW2" ]]; then
+  if [ "$ADMIN_PW" != "$ADMIN_PW2" ]; then
     echo -e "${RED}❌ Passwörter stimmen nicht überein.${NC}"
     exit 1
   fi
 
-  # Beispiel: Hash schreiben (anpassen auf dein Projekt)
-  # python venv etc. ggf. wie in deinem bisherigen Script
-  # ---------------------------------------------------------------------
-  # source "$BASE_DIR/venv/bin/activate"
-  # python3 - <<PY
-  # import json
-  # from werkzeug.security import generate_password_hash
-  # pw = """$ADMIN_PW"""
-  # data = {'admin_password_hash': generate_password_hash(pw)}
-  # with open('$BASE_DIR/web/admin_auth.json','w') as f:
-  #     json.dump(data, f)
-  # print('admin_auth.json written')
-  # PY
-  # chmod 600 "$BASE_DIR/web/admin_auth.json"
-  # ---------------------------------------------------------------------
+  AUTH_FILE="$BASE_DIR/web/admin_auth.json"
 
-  echo -e "${GREEN}✅ Core installer finished successfully${NC}"
+  python3 - <<PY
+import json
+from werkzeug.security import generate_password_hash
+pw = """$ADMIN_PW"""
+data = {"admin_password_hash": generate_password_hash(pw)}
+with open("$AUTH_FILE","w") as f:
+    json.dump(data, f)
+print("✅ Admin-Hash geschrieben nach: $AUTH_FILE")
+PY
+
+  chmod 600 "$AUTH_FILE"
+  chown "$USER:$USER" "$AUTH_FILE"
+
+  # 11. Fertig
+  echo -e "\n${GREEN}🎉 Installation abgeschlossen!${NC}"
+  echo -e "---------------------------------------------"
+  echo -e "📦 FSD kompiliert mit SQLite-Unterstützung"
+  echo -e "🐍 Flask Umgebung installiert: $VENV_DIR"
+  echo -e "🗃️  Benutzer-Datenbank: $DB_PATH"
+  echo -e "🧭 Manager starten mit:"
+  echo -e "👉  bash \"$BASE_DIR/fsd_manager.sh\""
+  echo -e "---------------------------------------------"
+  echo -e "${YELLOW}Zum Starten:${NC}"
+  echo -e "👉  source \"$VENV_DIR/bin/activate\""
+  echo -e "👉  bash \"$BASE_DIR/fsd_manager.sh\""
+  echo -e "---------------------------------------------"
 }
 
-# If invoked in CORE mode, run installer and exit.
+# CORE mode: run the real installer
 if [[ "$MODE" == "core" ]]; then
   core_install
   exit 0
 fi
 
-# ---------- TUI BOOTSTRAP ----------
-# We will install only the minimal packages needed to render the TUI.
-# Then create a temporary venv and run a temporary Python TUI from heredoc.
-
+# -------------------------------
+# TUI bootstrap (nur 1 Datei insgesamt)
+# -------------------------------
 sudo apt update -y
 sudo apt install -y python3 python3-venv python3-pip
 
 TMP_DIR="$(mktemp -d)"
-cleanup() {
-  rm -rf "$TMP_DIR" || true
-}
+cleanup() { rm -rf "$TMP_DIR" || true; }
 trap cleanup EXIT
 
 TUI_VENV="$TMP_DIR/.tui_venv"
@@ -112,10 +228,12 @@ from textual.widgets import Header, Footer, Input, ListView, ListItem, Label, St
 from textual.screen import ModalScreen
 
 STEPS = [
-    "System aktualisieren",
+    "System vorbereiten",
     "Pakete installieren",
-    "Verzeichnisse/Build/Setup",
-    "Admin Passwort setzen",
+    "Python venv + Pakete",
+    "Build (CMake/Make)",
+    "DB + Rechte",
+    "Admin Passwort",
     "Fertig",
 ]
 
@@ -151,27 +269,11 @@ class InstallerTUI(App):
 
     #layout { height: 1fr; }
 
-    #left {
-        width: 30%;
-        min-width: 26;
-        border: tall $accent;
-        background: #061317;
-    }
-
+    #left { width: 30%; min-width: 26; border: tall $accent; background: #061317; }
     #right { width: 70%; }
 
-    #details {
-        height: 7;
-        border: tall $accent;
-        background: #061317;
-        padding: 1 2;
-    }
-
-    #logs {
-        border: tall $accent;
-        background: #061317;
-        padding: 1 2;
-    }
+    #details { height: 7; border: tall $accent; background: #061317; padding: 1 2; }
+    #logs { border: tall $accent; background: #061317; padding: 1 2; }
 
     ListView { background: #061317; }
     ListItem.-highlight { background: $accent; color: #081316; }
@@ -179,12 +281,7 @@ class InstallerTUI(App):
     Footer { background: #061317; }
 
     PasswordModal { align: center middle; }
-    PasswordModal > * {
-        width: 70;
-        border: tall $accent;
-        background: #061317;
-        padding: 1 2;
-    }
+    PasswordModal > * { width: 70; border: tall $accent; background: #061317; padding: 1 2; }
     #modal_buttons { height: auto; align: center middle; padding-top: 1; }
     Button { margin: 0 1; }
     """
@@ -214,10 +311,9 @@ class InstallerTUI(App):
         log.write("[b]Installer Logs[/b]")
         log.write("Passwort wird abgefragt...")
 
-        result = await self.push_screen_wait(PasswordModal())
-        pw1, pw2 = result
+        pw1, pw2 = await self.push_screen_wait(PasswordModal())
 
-        log.write("[orange1]Starte Installer...[/orange1]")
+        log.write("[orange1]Starte Installation...[/orange1]")
 
         t = threading.Thread(target=self._run_installer, args=(pw1, pw2), daemon=True)
         t.start()
@@ -265,12 +361,7 @@ class InstallerTUI(App):
         self.query_one("#search", Input).focus()
 
 if __name__ == "__main__":
-    os.environ.setdefault("FSD_SCRIPT_PATH", "")
-    os.environ.setdefault("FSD_BASE_DIR", "")
     InstallerTUI().run()
 PY
-
-export FSD_SCRIPT_PATH="$SCRIPT_PATH"
-export FSD_BASE_DIR="$BASE_DIR"
 
 python3 "$TUI_APP"
