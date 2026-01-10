@@ -231,7 +231,7 @@ class LiveObserver:
         self.last_push = 0.0
         # BOT/FSD Connection Status
         self.fsd_connected = False
-        self.fsd_connected_since = none
+        self.fsd_connected_since = None
         self.last_fsd_rx_ts = 0
 
     def update_client(self, obj: Dict[str, Any]):
