@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS cert (
 
 INSERT OR REPLACE INTO cert (cid, password, level, twitch_name)
 VALUES ('1', 'obs1', 99, 'Observer');
+SQL
 
 chmod 644 "$DB_PATH"
 echo -e "${GREEN}✅ Datenbank erstellt und Benutzer hinzugefügt: $DB_PATH${NC}"
