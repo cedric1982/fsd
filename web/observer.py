@@ -250,7 +250,7 @@ class LiveObserver:
                     "clients": self.snapshot(),
                     "ts": int(now),
                     "bot": {
-                        "connected": bool(self.fsd_connect),
+                        "connected": bool(self.fsd_connected),
                         "since": self.fsd_connected_since
                     }
                 }
