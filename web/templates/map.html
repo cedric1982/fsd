@@ -2,10 +2,13 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FSD – Karte</title>
 
-  <!-- Socket.IO (wie im Dashboard) -->
+  <!-- Bootstrap (wie users.html) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Socket.IO -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
   <!-- Leaflet -->
@@ -23,120 +26,249 @@
 
   <style>
     :root{
-      --bg: #0b0f17;
-      --panel: rgba(255,255,255,.04);
+      --bg: #0d1117;
+      --panel: #111822;
+      --panel-2: #0f1620;
       --border: rgba(255,255,255,.07);
-      --muted: #8b93a7;
-      --text: #e9edf7;
+      --muted: #8b949e;
+      --text: #c9d1d9;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
     }
 
-    html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text); }
+    body{ background: var(--bg); color: var(--text); }
 
     .app-shell{
+      min-height: 100vh;
       display: grid;
       grid-template-columns: 260px 1fr;
-      min-height: 100vh;
     }
+
+    /* Sidebar (wie users.html) */
     .sidebar{
+      background: linear-gradient(180deg, #0f1722, #0b121b);
       border-right: 1px solid var(--border);
-      background: rgba(0,0,0,.25);
-      padding: 18px 14px;
+      padding: 18px 16px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
     }
-    .brand{ padding: 10px 10px 16px; }
-    .brand h2{ margin: 0; font-size: 16px; }
-    .brand p{ margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+
+    .brand{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .brand .dot{
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #2ea043;
+      box-shadow: 0 0 0 4px rgba(46,160,67,.12);
+    }
+    .brand h4{
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: .4px;
+    }
+    .side-meta{
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
 
     .nav-link{
-      display: block;
+      color: var(--muted);
       padding: 10px 10px;
       border-radius: 10px;
-      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
       text-decoration: none;
-      margin: 6px 0;
-      background: transparent;
-      border: 1px solid transparent;
     }
-    .nav-link:hover{
-      background: rgba(255,255,255,.03);
-      border-color: var(--border);
-    }
+    .nav-link:hover{ background: rgba(255,255,255,.04); color: #fff; }
     .nav-link.active{
       background: rgba(255,255,255,.06);
-      border-color: var(--border);
+      color: #fff;
+      border: 1px solid var(--border);
     }
 
-    .main{
-      padding: 16px;
+    /* Main (wie users.html) */
+    .main{ padding: 22px 22px 40px; }
+    .main-inner{ max-width: 1400px; }
+
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 16px;
+      margin-bottom: 14px;
     }
+    .title h1{
+      font-size: 22px;
+      margin: 0 0 4px 0;
+      font-weight: 750;
+    }
+    .title p{
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
     .panel{
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
       overflow: hidden;
     }
+
+    .section-head{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .section-head h2{
+      font-size: 14px;
+      margin: 0;
+      font-weight: 750;
+      letter-spacing: .2px;
+    }
+
+    .section-actions{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+    }
+
+    .badge-soft{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .led{
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #d29922;
+      box-shadow: 0 0 0 4px rgba(210,153,34,.12);
+    }
+    .led.ok{
+      background: #2ea043;
+      box-shadow: 0 0 0 4px rgba(46,160,67,.12);
+    }
+
+    .btn-ghost{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color: #fff;
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .btn-ghost:hover{ background: rgba(255,255,255,.06); color: #fff; }
+
+    /* Map */
+    .map-wrap{
+      height: calc(100vh - 160px); /* Topbar + Paddings grob einkalkuliert */
+      min-height: 520px;
+    }
     #map{
-      height: calc(100vh - 32px);
+      height: 100%;
       width: 100%;
     }
 
-    /* Popup lesbar */
+    /* Leaflet Popup dark */
     .leaflet-popup-content-wrapper { background: #0f1523; color: var(--text); }
     .leaflet-popup-tip { background: #0f1523; }
 
-    /* --- Aircraft Icon (rotierbar) --- */
-    .aircraft-wrapper{
+    /* Aircraft Icon */
+    .aircraft-icon {
       width: 28px;
       height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       transform-origin: 50% 50%;
       will-change: transform;
     }
-
-    /* Das SVG wird als <img> geladen; Größe über CSS */
-    .aircraft-icon{
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      user-select: none;
-      -webkit-user-drag: none;
+    .aircraft-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform: translate(-50%, -50%);
     }
 
-    /* Optional: Callsign-Label unter dem Icon */
-    .aircraft-label {
-      margin-top: 2px;
-      text-align: center;
-      font: 12px system-ui, sans-serif;
-      color: var(--text);
-      text-shadow: 0 1px 2px rgba(0,0,0,.8);
-      white-space: nowrap;
-      pointer-events: none;
-    }
-
+    /* Responsive */
     @media (max-width: 992px){
       .app-shell{ grid-template-columns: 1fr; }
-      #map{ height: 70vh; }
+      .sidebar{ position: relative; height: auto; }
+      .main{ padding: 16px; }
+      .map-wrap{ height: 70vh; min-height: 420px; }
     }
   </style>
 </head>
 
 <body>
   <div class="app-shell">
+    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="brand">
-        <h2>FSD Dashboard</h2>
-        <p>Live Map Ansicht</p>
+        <div class="dot"></div>
+        <div>
+          <h4>FSD Manager</h4>
+          <div class="side-meta">Live Map Ansicht</div>
+        </div>
       </div>
 
       <a class="nav-link" href="/">Dashboard</a>
       <a class="nav-link" href="/users">Benutzerverwaltung</a>
       <a class="nav-link active" href="/map">Karte</a>
+
+      <div class="side-meta">
+        <div><span class="text-white">Hinweis:</span> Aktualisierung alle 5–10 Sekunden.</div>
+      </div>
     </aside>
 
+    <!-- Main -->
     <main class="main">
-      <div class="panel">
-        <div id="map"></div>
+      <div class="main-inner">
+        <div class="topbar">
+          <div class="title">
+            <h1>FSD – Karte</h1>
+            <p>Live-Positionen der verbundenen Clients.</p>
+          </div>
+
+          <div class="section-actions">
+            <span class="badge-soft">
+              <span class="led ok" id="map-led"></span>
+              <span id="map-status">LIVE</span>
+            </span>
+            <button class="btn-ghost" onclick="location.reload()">Neu laden</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section-head">
+            <h2>Live Map</h2>
+            <div class="section-actions" style="color: var(--muted); font-size: 12px;">
+              <span id="map-meta">–</span>
+            </div>
+          </div>
+          <div class="map-wrap">
+            <div id="map"></div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -159,7 +291,7 @@
       const gs  = (c.gs ?? "-");
       return `
         <div style="font-family:system-ui,sans-serif;font-size:14px">
-          <b>${c.callsign}</b><br/>
+          <b>${c.callsign || "-"}</b><br/>
           HDG: ${hdg}&deg;<br/>
           ALT: ${alt} ft<br/>
           GS: ${gs} kt
@@ -167,45 +299,59 @@
       `;
     }
 
-    // Aircraft-Icon (SVG-Datei aus deinem Projekt)
-    // Pfad ist relativ zu map.html (bei /map ausgeliefert): /assets/icons/a320.svg
-    const AIRCRAFT_ICON_URL = "/static/a320.svg";
+    function aircraftSvg() {
+      return `
+        <svg class="aircraft-icon" viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M32 2
+                   L38 26
+                   L58 34
+                   L58 40
+                   L38 38
+                   L36 62
+                   L28 62
+                   L26 38
+                   L6 40
+                   L6 34
+                   L26 26
+                   Z"
+                fill="white" fill-opacity="0.92"/>
+        </svg>
+      `;
+    }
 
-    // Falls dein SVG nicht nach Norden zeigt, hier korrigieren (häufig: -90 oder +90)
-    const ICON_HEADING_OFFSET_DEG = 0;
-
-    function makeAircraftDivIcon(headingDeg, callsign = "") {
+    function makeAircraftDivIcon(headingDeg) {
       const safeHdg = Number.isFinite(headingDeg) ? headingDeg : 0;
-      const rotated = safeHdg + ICON_HEADING_OFFSET_DEG;
-
       const html = `
-        <div class="aircraft-wrapper" style="transform: rotate(${rotated}deg);">
-          <img src="${AIRCRAFT_ICON_URL}" class="aircraft-icon">
+        <div class="aircraft-wrapper">
+          <div style="transform: rotate(${safeHdg}deg);">
+            ${aircraftSvg()}
+          </div>
         </div>
       `;
-
       return L.divIcon({
         className: "",
         html,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14]
+        iconSize: [1, 1],
+        iconAnchor: [0, 0]
       });
     }
-
 
     function applyClients(clients) {
       const seen = new Set();
 
       for (const c of (clients || [])) {
-        if (!c || typeof c.lat !== 'number' || typeof c.lon !== 'number') continue;
+        // robust: lat/lon auch akzeptieren, wenn als string kommt
+        const lat = (typeof c.lat === "number") ? c.lat : Number.parseFloat(c.lat);
+        const lon = (typeof c.lon === "number") ? c.lon : Number.parseFloat(c.lon);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
         if (!c.callsign) continue;
 
         const callsign = c.callsign;
         seen.add(callsign);
 
-        const latlng = [c.lat, c.lon];
+        const latlng = [lat, lon];
 
-        // Heading bevorzugt rounded, sonst float
         const hdg = (Number.isFinite(c.hdg_deg_round) ? c.hdg_deg_round :
                      Number.isFinite(c.hdg_deg) ? c.hdg_deg : 0);
 
@@ -213,7 +359,7 @@
 
         if (!marker) {
           marker = L.marker(latlng, {
-            icon: makeAircraftDivIcon(hdg, callsign),
+            icon: makeAircraftDivIcon(hdg),
             keyboard: false
           }).addTo(map);
 
@@ -221,9 +367,7 @@
           markers.set(callsign, marker);
         } else {
           marker.setLatLng(latlng);
-
-          // Icon aktualisieren, wenn sich Heading ändert
-          marker.setIcon(makeAircraftDivIcon(hdg, callsign));
+          marker.setIcon(makeAircraftDivIcon(hdg));
           marker.setPopupContent(popupHtml(c));
         }
       }
@@ -235,6 +379,9 @@
           markers.delete(cs);
         }
       }
+
+      const meta = document.getElementById("map-meta");
+      if (meta) meta.textContent = `${markers.size} Marker · ${new Date().toLocaleTimeString("de-DE")}`;
     }
 
     // Initialer Snapshot
@@ -245,7 +392,15 @@
           const data = await res.json();
           applyClients(data.clients || []);
         }
-      } catch (e) {}
+      } catch (e) {
+        const s = document.getElementById("map-status");
+        const led = document.getElementById("map-led");
+        if (s) s.textContent = "OFFLINE";
+        if (led) led.classList.remove("ok");
+      }
+
+      // Leaflet braucht nach Layout manchmal ein invalidateSize()
+      setTimeout(() => map.invalidateSize(), 150);
     })();
 
     // Live Updates via Socket.IO
@@ -254,5 +409,7 @@
       applyClients((data && data.clients) ? data.clients : []);
     });
   </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
