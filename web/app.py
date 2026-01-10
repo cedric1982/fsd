@@ -64,6 +64,21 @@ def require_admin(view):
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+
+# ------------------
+# Live Cache
+# ------------------
+
+LIVE_CACHE_LOCK = threading.Lock()
+LIVE_CACHE = {
+    "clients": [],
+    "ts": 0,
+    "bot": {"connected": False, "since": None},
+}
+
+
+
+
 # -------------------------------------------------------------------
 # Dashboard (wird nur einmal geladen – danach WebSocket live updates)
 # -------------------------------------------------------------------
@@ -126,6 +141,8 @@ def handle_connect():
             with open(STATUS_FILE, "r") as f:
                 data = json.load(f)
                 emit("status_update", data)
+            with LIVE_CACHE_LOCK:
+                emit("live_clients", LIVE_CACHE)
         except:
             pass
 
@@ -319,17 +336,33 @@ def api_clients():
 LIVE_PUSH_TOKEN = os.environ.get("FSD_PUSH_TOKEN", "my-super-secret-token")
 
 @app.route("/api/live_update", methods=["POST"])
-def live_update():
-    data = request.get_json(force=True, silent=True) or {}
-    with LIVE_CACHE_LOCK:
-        LIVE_CACHE["clients"] = data.get("clients", [])
-        LIVE_CACHE["ts"] = data.get("ts", int(time.time()))
-    print("live_update keys:", list(data.keys()))
-    if "clients" in data and data["clients"]:
-        print("sample client:", data["clients"][0])
+def api_live_update():
+    token = request.headers.get("X-FSD-Token", "")
+    if token != LIVE_PUSH_TOKEN:
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
 
+    data = request.get_json(silent=True) or {}
+
+    # Defaults, damit Frontend immer stabile Felder hat
+    if "clients" not in data or not isinstance(data.get("clients"), list):
+        data["clients"] = []
+    if "ts" not in data:
+        data["ts"] = int(time.time())
+    if "bot" not in data or not isinstance(data.get("bot"), dict):
+        data["bot"] = {"connected": False, "since": None}
+    else:
+        data["bot"].setdefault("connected", False)
+        data["bot"].setdefault("since", None)
+
+    # Cache aktualisieren
+    with LIVE_CACHE_LOCK:
+        LIVE_CACHE["clients"] = data["clients"]
+        LIVE_CACHE["ts"] = data["ts"]
+        LIVE_CACHE["bot"] = data["bot"]
+
+    # Broadcast an alle Dashboards
     socketio.emit("live_clients", data)
-    return {"ok": True}
+    return jsonify({"ok": True})
 
 
 # --- Karte hinzugefügt ---
