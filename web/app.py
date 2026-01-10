@@ -398,7 +398,9 @@ def users():
 
     c.execute("SELECT MAX(CAST(cid AS INTEGER)) FROM cert")
     max_cid = c.fetchone()[0]
-    next_cid = (max_cid or 0) + 1
+    BASE_CID = 1000001
+    next_cid = max(BASE_CID, (max_cid or 0) + 1)
+    c.execute("SELECT cid, password, level, twitch_name FROM cert WHERE CAST(cid AS INTEGER) != 1 ORDER BY CAST(cid AS INTEGER)")
 
     conn.close()
 
