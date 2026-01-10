@@ -31,7 +31,11 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 last_mtime = 0
 
 LIVE_CACHE_LOCK = threading.Lock()
-LIVE_CACHE = {"clients": [], "ts": 0}
+LIVE_CACHE = {
+    "clients": [],
+    "ts": 0,
+    "bot": {"connected": False, "since": None},
+}
 
 
 app = Flask(__name__)
