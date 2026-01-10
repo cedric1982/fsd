@@ -315,7 +315,7 @@ def api_status():
             pid = proc.pid
             uptime_sec = int(time.time() - proc.create_time())
             return jsonify({
-                "status": "running",
+                "status": "Läuft",
                 "pid": pid,
                 "uptime_sec": uptime_sec
             })
@@ -327,7 +327,7 @@ def api_status():
             })
     else:
         return jsonify({
-            "status": "stopped",
+            "status": "Gestoppt",
             "pid": None,
             "uptime_sec": 0
         })
