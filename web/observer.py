@@ -319,7 +319,10 @@ class LiveObserver:
                 self._send_login(sock)
                 self._send_atc_position(sock)
                 print("[observer] tcp connected, waiting for server feed...")
-
+                self.fsd_connected = True
+                if self.fsd_connected_since is None:
+                    self.fsd_connected_since = int(time.time())
+                self.last_fsd_rx_ts = int(time())
                 # nach erfolgreichem Connect Backoff zurücksetzen
                 backoff = 1
 
