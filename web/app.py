@@ -37,6 +37,8 @@ LIVE_CACHE = {
     "bot": {"connected": False, "since": None},
 }
 
+BOT_CID = os.environ.get("FSD_BOT_CID", "999999").strip()
+
 
 app = Flask(__name__)
 # Session benötigt secret_key (bitte nicht leer lassen)
@@ -397,7 +399,7 @@ def users():
         )
     """)
 
-    c.execute("SELECT cid, password, level, twitch_name FROM cert ORDER BY CAST(cid AS INTEGER)")
+    c.execute("SELECT cid, password, level, twitch_name FROM cert ORDER BY CAST(cid AS INTEGER)", (BOT_CID,)
     users = c.fetchall()
 
     c.execute("SELECT MAX(CAST(cid AS INTEGER)) FROM cert")
@@ -448,6 +450,8 @@ def add_user():
 @app.route("/delete_user/<cid>")
 # @require_admin
 def delete_user(cid):
+    if str(cid) == BOT_CID:
+    return jsonify({"ok": False, "error": "Cannot delete BOT account"}), 400
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("DELETE FROM cert WHERE cid = ?", (cid,))
