@@ -229,6 +229,10 @@ class LiveObserver:
         self.clients: Dict[str, Dict[str, Any]] = {}
         self.lock = threading.Lock()
         self.last_push = 0.0
+        # BOT/FSD Connection Status
+        self.fsd_connected = False
+        self.fsd_connected_since = none
+        self.last_fsd_rx_ts = 0
 
     def update_client(self, obj: Dict[str, Any]):
         with self.lock:
@@ -242,7 +246,14 @@ class LiveObserver:
         while True:
             now = time.time()
             if (now - self.last_push) >= PUSH_INTERVAL:
-                payload = {"clients": self.snapshot(), "ts": int(now)}
+                payload = {
+                    "clients": self.snapshot(),
+                    "ts": int(now),
+                    "bot": {
+                        "connected": bool(self.fsd_connect),
+                        "since": self.fsd_connected_since
+                    }
+                }
                 try:
                     http_post_json(PUSH_URL, PUSH_TOKEN, payload)
                 except Exception as e:
@@ -328,6 +339,11 @@ class LiveObserver:
                         s = raw_line.decode("utf-8", errors="ignore").strip()
                         if not s:
                             continue
+                        if s.startswitch("#TMServer:"):
+                            if not self.fsd_connected:
+                                self.fsd_connected = True
+                                self.fsd_connected_since = int(time.time())
+                                self.last_fsd_rx_ts = int(time.time())
 
                         print(f"[observer] RX line: {s}")
 
@@ -346,6 +362,8 @@ class LiveObserver:
                                 self.update_client(obj)
 
             except Exception as e:
+                self.fsd_connected = False
+                self.fsd_connected_since = None
                 print(f"[observer] disconnected: {e}. retry in {backoff}s")
                 time.sleep(backoff)
                 backoff = min(backoff * 2, 30)
