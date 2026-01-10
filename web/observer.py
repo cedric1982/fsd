@@ -322,7 +322,7 @@ class LiveObserver:
                 self.fsd_connected = True
                 if self.fsd_connected_since is None:
                     self.fsd_connected_since = int(time.time())
-                self.last_fsd_rx_ts = int(time())
+                self.last_fsd_rx_ts = int(time.time())
                 # nach erfolgreichem Connect Backoff zurücksetzen
                 backoff = 1
 
