@@ -38,6 +38,8 @@ export FSD_LEVEL="1"
 export FSD_REVISION="9"
 export FSD_CID="999999"
 export FSD_PASSWORD="bot"
+export FSD_BOT_CID="999999"
+
 
 
 
