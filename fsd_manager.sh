@@ -37,7 +37,7 @@ export FSD_REALNAME="Observer"
 export FSD_LEVEL="0"
 export FSD_REVISION="9"
 export FSD_CID="1"
-export FSD_PASSWORD=""
+export FSD_PASSWORD="bot"
 
 
 
