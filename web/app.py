@@ -399,7 +399,7 @@ def users():
         )
     """)
 
-    c.execute("SELECT cid, password, level, twitch_name FROM cert ORDER BY CAST(cid AS INTEGER)", (BOT_CID,)
+    c.execute("SELECT cid, password, level, twitch_name FROM cert ORDER BY CAST(cid AS INTEGER)", (BOT_CID,))
     users = c.fetchall()
 
     c.execute("SELECT MAX(CAST(cid AS INTEGER)) FROM cert")
