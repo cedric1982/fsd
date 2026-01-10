@@ -339,7 +339,7 @@ class LiveObserver:
                         s = raw_line.decode("utf-8", errors="ignore").strip()
                         if not s:
                             continue
-                        if s.startswitch("#TMServer:"):
+                        if s.startswith("#TMServer:"):
                             if not self.fsd_connected:
                                 self.fsd_connected = True
                                 self.fsd_connected_since = int(time.time())
