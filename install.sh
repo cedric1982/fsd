@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS cert (
 );
 
 INSERT OR REPLACE INTO cert (cid, password, level, twitch_name)
-VALUES ('1', 'bot', 0, 'Observer');
+VALUES ('999999', 'bot', 0, 'Observer');
 SQL
 
 chmod 644 "$DB_PATH"
