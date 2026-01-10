@@ -325,6 +325,10 @@
               <span class="led" id="led"></span>
               <span id="status-badge-text">OFFLINE</span>
             </span>
+            <span class="badge-soft">
+            <span class="led" id="bot-led"></span>
+            <span id="bot-badge-text">BOT</span>
+            </span>
             <button class="btn-ghost" onclick="location.reload()">Neu laden</button>
           </div>
         </div>
@@ -436,42 +440,6 @@
           </div>
         </div>
 
-        <!-- Logins -->
-        <div class="row g-3">
-          <div class="col-12">
-            <div class="panel">
-              <div class="section-head">
-                <h2>Letzte Loginversuche</h2>
-                <div class="section-actions">
-                  <span class="badge-soft"><span class="led warn" id="audit-led"></span><span id="audit-text">Audit</span></span>
-                </div>
-              </div>
-
-              <div class="table-wrap" style="max-height: 260px;">
-                <table class="table table-darkish table-hover align-middle">
-                  <thead>
-                    <tr>
-                      <th>Zeit</th>
-                      <th>Callsign</th>
-                      <th>CID</th>
-                      <th>Status</th>
-                      <th>Nachricht</th>
-                    </tr>
-                  </thead>
-                  <tbody id="logins-body">
-                    <tr>
-                      <td colspan="5">
-                        <div class="empty">Keine Logins vorhanden</div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
       </div>
     </main>
   </div>
@@ -532,6 +500,25 @@
       }
     }
 
+    // Bot Status
+    function setBotUI(connected){
+    const led = document.getElementById("bot-led");
+    const text = document.getElementById("bot-badge-text");
+    text.textContent = "BOT";
+
+    if (connected) {
+      led.classList.add("ok");
+      led.classList.remove("warn");
+    } else {
+      led.classList.remove("ok");
+      led.classList.remove("warn");
+    }
+  }
+
+
+
+
+    
     // State
     let lastClients = [];
     let lastLogins = [];
@@ -550,6 +537,7 @@
 
       const filtered = (clients || []).filter(c => {
         const cs = String(c.callsign || "").toLowerCase();
+        if (cs === "bot" || cs === "obs1") return false; //Bot wird nicht gezählt
         const ty = String(c.type || "").toLowerCase();
         return !q || cs.includes(q) || ty.includes(q);
       });
@@ -700,27 +688,28 @@
     });
 
       socket.on("live_clients", (payload) => {
-  if (!payload || !Array.isArray(payload.clients)) return;
-  document.getElementById("last-update-text").textContent = nowStamp();
-      
+      if (!payload) return;
 
-  // 1) Leere Live-Updates nicht verwenden, wenn wir schon etwas anzeigen
-  if (payload.clients.length === 0 && Array.isArray(lastClients) && lastClients.length > 0) {
-    return;
-  }
+      document.getElementById("last-update-text").textContent = nowStamp();
 
-  // 2) Live-Modus erst aktivieren, wenn wirklich Live-Daten da sind
-  if (payload.clients.length > 0) {
-    liveMode = true;
-  }
+      // BOT-Status immer aktualisieren (unabhängig von clients)
+      const botConnected = !!(payload.bot && payload.bot.connected);
+      setBotUI(botConnected);
 
-  // 3) Nur überschreiben, wenn es Sinn ergibt
-  if (payload.clients.length > 0 || !lastClients || lastClients.length === 0) {
-    lastClients = payload.clients;
-    renderClients(lastClients);
-    document.getElementById("kpi-clients").textContent = String(lastClients.length);
-  }
+      // Clients nur verarbeiten, wenn payload.clients vorhanden ist
+      if (!Array.isArray(payload.clients)) return;
+
+      // Sobald wir Live-Daten bekommen, schalten wir liveMode ein – auch wenn Liste leer ist,
+      // denn "leer" ist ein valides Live-Update (z. B. nach Disconnect).
+      liveMode = true;
+
+      lastClients = payload.clients;
+      renderClients(lastClients);
+
+      // KPI wird in renderClients gesetzt, aber falls du es redundant behalten willst:
+      // document.getElementById("kpi-clients").textContent = String(lastClients.length);
 });
+
 
   </script>
 
