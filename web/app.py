@@ -451,7 +451,7 @@ def add_user():
 # @require_admin
 def delete_user(cid):
     if str(cid) == BOT_CID:
-    return jsonify({"ok": False, "error": "Cannot delete BOT account"}), 400
+        return jsonify({"ok": False, "error": "Cannot delete BOT account"}), 400
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("DELETE FROM cert WHERE cid = ?", (cid,))
