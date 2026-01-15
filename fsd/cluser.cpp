@@ -349,6 +349,9 @@ void cluser::execcq(char **array, int count)
       showerror(ERR_SYNTAX, "");
       return;
    }
+   if (!STRCASECMP(array[2], "ACC") && array[1] && array [1][0] == '@')
+	   array[1] = (char*)"*";
+
    if (STRCASECMP(array[1], "server"))
    { 
       execmulticast(array, count, CL_CQ, 1, 1);
@@ -359,7 +362,7 @@ void cluser::execcq(char **array, int count)
 	client *cl=getclient(array[1]);
 	if (cl)
 	{
-		char data[1000];
+		char data[8192];
 		sprintf(data, "%s:%s:RN:%s:USER:%d", cl->callsign, thisclient->callsign, cl->realname,cl->rating);
 		clientinterface->sendpacket(thisclient,cl,NULL,CLIENT_ALL,-1,CL_CR,data);
 		return;
