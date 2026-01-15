@@ -431,6 +431,39 @@ void cluser::doparse(char *s)
 
    /* Just a hack to put the pointer on the first arg here */
    s+=strlen(clcmdnames[index]);
+
+   if (index == CL_CQ)
+   {
+	   static char buf[8192];
+	   strncpy(buf, s, sizeof(buf)-1);
+	   buf[sizeof(buf)-1] = '\0';
+
+	   char *p = buf;
+	   char *c1 = strchr(p, ':'); if (!c1) { showerror(ERR_SYNTAX, ""); return; }
+	   *c1 = '\0';
+	   char *from = p;
+
+	   char *c2 = strchr(c1+1, ':'); if (!c2) { showerror(ERR_SYNTAX, ""); return;}
+	   *c2 = '\0';
+	   char *to = c1+1;
+
+	   char *c3 = strchr(c2+1, ':'); if (!c3) { showerror(ERR_SYNTAX, ""); return; }
+	   *c3 = '\0';
+	   char *topic = c2+1;
+
+	   char *payload = c3+1;
+
+	   char *array[4];
+	   array[0] = from;
+	   array[1] = to;
+	   array[2] = topic;
+	   array[3] = payload;
+	   count = 4;
+
+	   execcq(array, count);
+	   return;
+   }
+   char *array[100];
    count=breakpacket(s,array,100);
    switch (index)
    {
