@@ -466,7 +466,6 @@ void cluser::doparse(char *s)
 	   execcq(array, count);
 	   return;
    }
-   char *array[100];
    count=breakpacket(s,array,100);
    switch (index)
    {
