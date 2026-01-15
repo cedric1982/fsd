@@ -266,7 +266,7 @@ void cluser::execmulticast(char **s, int count, int cmd, int nargs, int multiok)
       showerror(ERR_SYNTAX, "");
       return;
    }
-   char *from, *to, data[1000]="";
+   char *from, *to, data[8192]="";
    catcommand(s+2, count-2, data);
    from=s[0], to=s[1];
    if (!checksource(from)) return;
