@@ -24,6 +24,7 @@ LOG_DIR = BASE_DIR / "logs"
 
 FSD_PATH = UNIX_DIR / "fsd"
 WHAZZUP_PATH = UNIX_DIR / "whazzup.txt"
+FSD_DATA_JSON_PATH = UNIX_DIR / "fsd-data.json"
 DB_PATH = UNIX_DIR / "cert.sqlitedb3"
 STATUS_FILE = LOG_DIR / "status.json"
 
@@ -114,6 +115,39 @@ def index():
 def logout():
     session.pop("is_admin", None)
     return redirect(url_for("index"))
+
+
+@app.route("/fsd-data.json")
+@app.route("/api/fsd-data")
+def api_fsd_data_json():
+    if not FSD_DATA_JSON_PATH.exists():
+        return jsonify({
+            "general": {
+                "version": 3,
+                "reload": 1,
+                "update": "",
+                "update_timestamp": "",
+                "connected_clients": 0,
+                "unique_users": 0
+            },
+            "pilots": [],
+            "controllers": [],
+            "atis": [],
+            "servers": [],
+            "prefiles": [],
+            "facilities": [],
+            "ratings": [],
+            "pilot_ratings": []
+        })
+
+    with open(FSD_DATA_JSON_PATH, "r", encoding="utf-8") as f:
+        return app.response_class(
+            response=f.read(),
+            status=200,
+            mimetype="application/json"
+        )
+
+
 
 
 # -------------------------------------------------------------------
