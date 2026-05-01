@@ -7,6 +7,8 @@ import threading
 import urllib.request
 import math
 from typing import Optional, Dict, Any, List
+from pathlib import Path
+from datetime import datetime, timezone
 import sys
 
 sys.stdout.reconfigure(line_buffering=True)
@@ -43,6 +45,12 @@ FSD_SIMTYPE = os.environ.get("FSD_SIMTYPE", "0").strip()
 
 # Optional: Wenn gesetzt, wird das 1:1 gesendet (wie früher). Hat Priorität.
 LOGIN_LINE = os.environ.get("FSD_LOGIN_LINE", "").strip()
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+UNIX_DIR = BASE_DIR / "unix"
+FSD_DATA_JSON_PATH = Path(
+    os.environ.get("FSD_DATA_JSON_PATH", str(UNIX_DIR / "fsd-data.json"))
+)
 
 # =============================================================================
 # PBH Decoder (Swift-kompatible Semantik)
@@ -255,9 +263,9 @@ class LiveObserver:
                     }
                 }
                 try:
-                    http_post_json(PUSH_URL, PUSH_TOKEN, payload)
+                    self.write_fsd_data_json()
                 except Exception as e:
-                    print(f"[observer] push failed: {e}")
+                    print(f"[observer] fsd-data.json write failed: {e}")
                 self.last_push = now
             time.sleep(0.05)
 
@@ -377,6 +385,100 @@ class LiveObserver:
                         sock.close()
                 except Exception:
                     pass
+
+    def build_vatsim_like_json(self) -> Dict[str, Any]:
+    now = datetime.now(timezone.utc)
+    clients = self.snapshot()
+
+    pilots = []
+    controllers = []
+
+    for c in clients:
+        item = {
+            "cid": int(c.get("cid", 0)) if str(c.get("cid", "")).isdigit() else None,
+            "name": c.get("realname", ""),
+            "callsign": c.get("callsign", ""),
+            "server": "FSD",
+            "latitude": float(c.get("lat", 0.0)),
+            "longitude": float(c.get("lon", 0.0)),
+            "altitude": int(c.get("alt", 0)),
+            "groundspeed": int(c.get("gs", 0)),
+            "transponder": str(c.get("squawk", "")),
+            "heading": int(c.get("hdg_deg_round", 0)),
+            "last_updated": now.isoformat().replace("+00:00", "Z"),
+        }
+
+        ctype = str(c.get("client_type", c.get("type", ""))).upper()
+
+        if ctype == "ATC":
+            controllers.append({
+                "cid": item["cid"],
+                "name": item["name"],
+                "callsign": item["callsign"],
+                "frequency": c.get("frequency", "199.998"),
+                "facility": int(c.get("facility", 0)),
+                "rating": int(c.get("rating", 0)),
+                "server": "FSD",
+                "visual_range": int(c.get("visual_range", 0)),
+                "text_atis": [],
+                "last_updated": item["last_updated"],
+            })
+        else:
+            pilots.append({
+                **item,
+                "pilot_rating": 0,
+                "military_rating": 0,
+                "flight_plan": None,
+                "logon_time": c.get("logon_time"),
+            })
+
+    unique_users = {
+        str(c.get("cid") or c.get("callsign"))
+        for c in clients
+        if c.get("cid") or c.get("callsign")
+    }
+
+    return {
+        "general": {
+            "version": 3,
+            "reload": 1,
+            "update": now.strftime("%Y%m%d%H%M%S"),
+            "update_timestamp": now.isoformat().replace("+00:00", "Z"),
+            "connected_clients": len(clients),
+            "unique_users": len(unique_users),
+        },
+        "pilots": pilots,
+        "controllers": controllers,
+        "atis": [],
+        "servers": [
+            {
+                "ident": "FSD",
+                "hostname_or_ip": FSD_HOST,
+                "location": "local",
+                "name": "FSD Server",
+                "clients_connection_allowed": 1,
+                "client_connections_allowed": True,
+                "is_sweatbox": False,
+            }
+        ],
+        "prefiles": [],
+        "facilities": [],
+        "ratings": [],
+        "pilot_ratings": [],
+    }
+
+
+def write_fsd_data_json(self):
+    payload = self.build_vatsim_like_json()
+    tmp = FSD_DATA_JSON_PATH.with_suffix(".json.tmp")
+
+    FSD_DATA_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+    os.replace(tmp, FSD_DATA_JSON_PATH)
+
 
 if __name__ == "__main__":
     LiveObserver().run()
