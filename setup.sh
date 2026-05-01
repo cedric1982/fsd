@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS cert (
 );
 
 INSERT OR REPLACE INTO cert (cid, password, level, twitch_name)
-VALUES ('1000001', 'observer', 99, 'Observer');
+VALUES ('999999', 'bot', 99, 'Observer');
 
 INSERT OR REPLACE INTO cert (cid, password, level, twitch_name)
 VALUES ('1000002', 'test123', 1, 'TestTwitch');
