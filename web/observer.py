@@ -266,6 +266,11 @@ class LiveObserver:
                     self.write_fsd_data_json()
                 except Exception as e:
                     print(f"[observer] fsd-data.json write failed: {e}")
+
+                try:
+                    http_post_json(PUSH_URL, PUSH_TOKEN, payload)
+                except Exception as e:
+                    print(f"[observer] push failes: {e}")
                 self.last_push = now
             time.sleep(0.05)
 
@@ -468,16 +473,16 @@ class LiveObserver:
         }
 
 
-def write_fsd_data_json(self):
-    payload = self.build_vatsim_like_json()
-    tmp = FSD_DATA_JSON_PATH.with_suffix(".json.tmp")
+    def write_fsd_data_json(self):
+        payload = self.build_vatsim_like_json()
+        tmp = FSD_DATA_JSON_PATH.with_suffix(".json.tmp")
 
-    FSD_DATA_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
+        FSD_DATA_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
 
-    os.replace(tmp, FSD_DATA_JSON_PATH)
+        os.replace(tmp, FSD_DATA_JSON_PATH)
 
 
 if __name__ == "__main__":
