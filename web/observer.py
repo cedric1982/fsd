@@ -387,85 +387,85 @@ class LiveObserver:
                     pass
 
     def build_vatsim_like_json(self) -> Dict[str, Any]:
-    now = datetime.now(timezone.utc)
-    clients = self.snapshot()
+        now = datetime.now(timezone.utc)
+        clients = self.snapshot()
 
-    pilots = []
-    controllers = []
+        pilots = []
+        controllers = []
 
-    for c in clients:
-        item = {
-            "cid": int(c.get("cid", 0)) if str(c.get("cid", "")).isdigit() else None,
-            "name": c.get("realname", ""),
-            "callsign": c.get("callsign", ""),
-            "server": "FSD",
-            "latitude": float(c.get("lat", 0.0)),
-            "longitude": float(c.get("lon", 0.0)),
-            "altitude": int(c.get("alt", 0)),
-            "groundspeed": int(c.get("gs", 0)),
-            "transponder": str(c.get("squawk", "")),
-            "heading": int(c.get("hdg_deg_round", 0)),
-            "last_updated": now.isoformat().replace("+00:00", "Z"),
+        for c in clients:
+            item = {
+                "cid": int(c.get("cid", 0)) if str(c.get("cid", "")).isdigit() else None,
+                "name": c.get("realname", ""),
+                "callsign": c.get("callsign", ""),
+                "server": "FSD",
+                "latitude": float(c.get("lat", 0.0)),
+                "longitude": float(c.get("lon", 0.0)),
+                "altitude": int(c.get("alt", 0)),
+                "groundspeed": int(c.get("gs", 0)),
+                "transponder": str(c.get("squawk", "")),
+                "heading": int(c.get("hdg_deg_round", 0)),
+                "last_updated": now.isoformat().replace("+00:00", "Z"),
+            }
+
+            ctype = str(c.get("client_type", c.get("type", ""))).upper()
+
+            if ctype == "ATC":
+                controllers.append({
+                    "cid": item["cid"],
+                    "name": item["name"],
+                    "callsign": item["callsign"],
+                    "frequency": c.get("frequency", "199.998"),
+                    "facility": int(c.get("facility", 0)),
+                    "rating": int(c.get("rating", 0)),
+                    "server": "FSD",
+                    "visual_range": int(c.get("visual_range", 0)),
+                    "text_atis": [],
+                    "last_updated": item["last_updated"],
+                })
+            else:
+                pilots.append({
+                    **item,
+                    "pilot_rating": 0,
+                    "military_rating": 0,
+                    "flight_plan": None,
+                    "logon_time": c.get("logon_time"),
+                })
+
+        unique_users = {
+            str(c.get("cid") or c.get("callsign"))
+            for c in clients
+            if c.get("cid") or c.get("callsign")
         }
 
-        ctype = str(c.get("client_type", c.get("type", ""))).upper()
-
-        if ctype == "ATC":
-            controllers.append({
-                "cid": item["cid"],
-                "name": item["name"],
-                "callsign": item["callsign"],
-                "frequency": c.get("frequency", "199.998"),
-                "facility": int(c.get("facility", 0)),
-                "rating": int(c.get("rating", 0)),
-                "server": "FSD",
-                "visual_range": int(c.get("visual_range", 0)),
-                "text_atis": [],
-                "last_updated": item["last_updated"],
-            })
-        else:
-            pilots.append({
-                **item,
-                "pilot_rating": 0,
-                "military_rating": 0,
-                "flight_plan": None,
-                "logon_time": c.get("logon_time"),
-            })
-
-    unique_users = {
-        str(c.get("cid") or c.get("callsign"))
-        for c in clients
-        if c.get("cid") or c.get("callsign")
-    }
-
-    return {
-        "general": {
-            "version": 3,
-            "reload": 1,
-            "update": now.strftime("%Y%m%d%H%M%S"),
-            "update_timestamp": now.isoformat().replace("+00:00", "Z"),
-            "connected_clients": len(clients),
-            "unique_users": len(unique_users),
-        },
-        "pilots": pilots,
-        "controllers": controllers,
-        "atis": [],
-        "servers": [
-            {
-                "ident": "FSD",
-                "hostname_or_ip": FSD_HOST,
-                "location": "local",
-                "name": "FSD Server",
-                "clients_connection_allowed": 1,
-                "client_connections_allowed": True,
-                "is_sweatbox": False,
-            }
-        ],
-        "prefiles": [],
-        "facilities": [],
-        "ratings": [],
-        "pilot_ratings": [],
-    }
+        return {
+            "general": {
+                "version": 3,
+                "reload": 1,
+                "update": now.strftime("%Y%m%d%H%M%S"),
+                "update_timestamp": now.isoformat().replace("+00:00", "Z"),
+                "connected_clients": len(clients),
+                "unique_users": len(unique_users),
+            },
+            "pilots": pilots,
+            "controllers": controllers,
+            "atis": [],
+            "servers": [
+                {
+                    "ident": "FSD",
+                    "hostname_or_ip": FSD_HOST,
+                    "location": "local",
+                    "name": "FSD Server",
+                    "clients_connection_allowed": 1,
+                    "client_connections_allowed": True,
+                    "is_sweatbox": False,
+                }
+            ],
+            "prefiles": [],
+            "facilities": [],
+            "ratings": [],
+            "pilot_ratings": [],
+        }
 
 
 def write_fsd_data_json(self):
